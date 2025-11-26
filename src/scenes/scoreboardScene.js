@@ -20,9 +20,7 @@ export default class ScoreboardScene extends Phaser.Scene {
         const { width, height } = this.scale;
 
         // ozadje
-        // svetla stena
         this.add.rectangle(0, 0, width, height - 150, 0xe8e8e8).setOrigin(0);
-        // tla
         this.add.rectangle(0, height - 150, width, 150, 0xd4c4a8).setOrigin(0);
 
         // miza
@@ -32,7 +30,13 @@ export default class ScoreboardScene extends Phaser.Scene {
         const tableHeight = 280;
 
         this.add.rectangle(tableX, tableY, tableWidth, 30, 0x8b4513).setOrigin(0.5);
-        const surface = this.add.rectangle(tableX, tableY + 15, tableWidth - 30, tableHeight - 30, 0xa0826d).setOrigin(0.5, 0);
+        const surface = this.add.rectangle(
+            tableX,
+            tableY + 15,
+            tableWidth - 30,
+            tableHeight - 30,
+            0xa0826d
+        ).setOrigin(0.5, 0);
 
         // mreža
         const grid = this.add.graphics();
@@ -59,8 +63,20 @@ export default class ScoreboardScene extends Phaser.Scene {
         // nogice mize
         const legWidth = 20;
         const legHeight = 150;
-        this.add.rectangle(tableX - tableWidth / 2 + 40, tableY + tableHeight / 2 + 20, legWidth, legHeight, 0x654321);
-        this.add.rectangle(tableX + tableWidth / 2 - 40, tableY + tableHeight / 2 + 20, legWidth, legHeight, 0x654321);
+        this.add.rectangle(
+            tableX - tableWidth / 2 + 40,
+            tableY + tableHeight / 2 + 20,
+            legWidth,
+            legHeight,
+            0x654321
+        );
+        this.add.rectangle(
+            tableX + tableWidth / 2 - 40,
+            tableY + tableHeight / 2 + 20,
+            legWidth,
+            legHeight,
+            0x654321
+        );
 
         // okvir
         const panelWidth = 600;
@@ -82,57 +98,25 @@ export default class ScoreboardScene extends Phaser.Scene {
             color: '#222'
         }).setOrigin(0.5);
 
-        // lestvica
-        const users = JSON.parse(localStorage.getItem('users')) || [];
-        const userLoged = localStorage.getItem('username');
+        // trenutno prijavljen user (za highlight)
+        const loggedUsername = localStorage.getItem('username');
 
-        // HARDCODED TESTIRANJE
-        const userToUpdate = users.find(u => u.username === 'enej');
-        if (userToUpdate) {
-            userToUpdate.score = 130;
-            localStorage.setItem('users', JSON.stringify(users));
-        }
+        // "Nalagam..." tekst
+        const loadingText = this.add.text(width / 2, panelY + 100, 'Nalagam lestvico...', {
+            fontFamily: 'Arial',
+            fontSize: '20px',
+            color: '#666'
+        }).setOrigin(0.5);
 
-        users.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-
-        users.forEach((user, index) => {
-            const y = panelY + 90 + index * 35;
-            const rank = index + 1;
-
-            // avatar
-            if (user.profilePic) {
-                this.add.image(panelX + 60, y + 15, user.profilePic)
-                    .setDisplaySize(40, 40)
-                    .setOrigin(0.5);
-            }
-
-            // mesto
-            this.add.text(panelX + 100, y + 5, `${rank}.`, { fontSize: '22px', color: '#444' });
-
-            // ime
-            const style = (user.username === userLoged)
-                ? { fontSize: '22px', color: '#0f5cad', fontStyle: 'bold' }
-                : { fontSize: '22px', color: '#222' };
-            this.add.text(panelX + 140, y + 5, user.username, style);
-
-            // točke
-            this.add.text(panelX + panelWidth - 100, y + 5, `${user.score ?? 0}`, {
-                fontSize: '22px',
-                color: '#0044cc'
-            }).setOrigin(1, 0);
-        });
+        // naloži leaderboard iz backenda
+        this.loadLeaderboard(panelX, panelY, panelWidth, loggedUsername, loadingText);
 
         // ESC tipka
         this.input.keyboard.on('keydown-ESC', () => {
-            if (this.cameFromMenu) {
-                this.scene.start('LabScene');
-            }
-            else {
-                this.scene.start('LabScene');
-            }
+            this.scene.start('LabScene');
         });
 
-        // gumb
+        // gumb nazaj (če ni prišel iz menija, ampak iz igre)
         if (this.cameFromMenu === false) {
             const backButton = this.add.text(width / 2, panelY + panelHeight - 40, '↩ Nazaj', {
                 fontFamily: 'Arial',
@@ -148,6 +132,62 @@ export default class ScoreboardScene extends Phaser.Scene {
                     this.scene.start('WorkspaceScene');
                 });
         }
+    }
 
+    loadLeaderboard(panelX, panelY, panelWidth, loggedUsername, loadingText) {
+        fetch('/api/users/leaderboard')
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Napaka pri fetchu leaderboarda');
+                }
+                return res.json();
+            })
+            .then(users => {
+                loadingText.destroy(); // odstranimo "Nalagam..."
+
+                if (!Array.isArray(users) || users.length === 0) {
+                    this.add.text(panelX + panelWidth / 2, panelY + 140, 'Ni še rezultatov.', {
+                        fontFamily: 'Arial',
+                        fontSize: '22px',
+                        color: '#666'
+                    }).setOrigin(0.5);
+                    return;
+                }
+
+                users.forEach((user, index) => {
+                    const y = panelY + 90 + index * 35;
+                    const rank = index + 1;
+
+                    const avatarKey = user.avatarPath || 'avatar1';
+
+                    // avatar
+                    this.add.image(panelX + 60, y + 15, avatarKey)
+                        .setDisplaySize(40, 40)
+                        .setOrigin(0.5);
+
+                    // mesto
+                    this.add.text(panelX + 100, y + 5, `${rank}.`, {
+                        fontSize: '22px',
+                        color: '#444'
+                    });
+
+                    // ime (highlight, če je prijavljen user)
+                    const style = (user.username === loggedUsername)
+                        ? { fontSize: '22px', color: '#0f5cad', fontStyle: 'bold' }
+                        : { fontSize: '22px', color: '#222' };
+
+                    this.add.text(panelX + 140, y + 5, user.username, style);
+
+                    // točke (uporabimo highScore)
+                    this.add.text(panelX + panelWidth - 100, y + 5, `${user.highScore ?? 0}`, {
+                        fontSize: '22px',
+                        color: '#0044cc'
+                    }).setOrigin(1, 0);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                loadingText.setText('Napaka pri nalaganju lestvice.');
+            });
     }
 }

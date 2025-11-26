@@ -1,6 +1,11 @@
-export default {
+// vite.config.js (primer za navaden Vite projekt)
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  // ostale nastavitve...
   server: {
-    host: '127.0.0.1',  
-    port: 5173,         
-  }
-};
+    proxy: {
+      "/api": "http://localhost:5500", // backend PORT
+    },
+  },
+});

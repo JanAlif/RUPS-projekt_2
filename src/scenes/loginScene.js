@@ -6,7 +6,6 @@ export default class LoginScene extends Phaser.Scene {
     }
 
     create() {
-        var users = JSON.parse(localStorage.getItem('users')) || [];
 
         // this.add.text(200, 100, 'Vnesi svoje uporabniško ime in geslo!', {
         //     fontFamily: 'Arial',
@@ -176,33 +175,46 @@ export default class LoginScene extends Phaser.Scene {
                     cornerRadius
                 );
             })
-            .on('pointerdown', () => {
+            .on('pointerdown', async () => {
                 const usernameTrim = username.value.trim();
                 const passwordTrim = password.value.trim();
-                const pfps = ['avatar1','avatar2','avatar3','avatar4','avatar5','avatar6','avatar7','avatar8','avatar9','avatar10','avatar11'];
-                const pfpKey = pfps[Math.floor(Math.random() * pfps.length)];
-
-                if (usernameTrim && passwordTrim) {
-                    const existingUser = users.find(u => u.username == usernameTrim);
-                    if (existingUser) {
-                        if (existingUser.password !== passwordTrim) {
-                            alert('Napačno geslo!');
-                            return;
-                        }
-                    } else {
-                        users.push({ username: usernameTrim, password: passwordTrim, score: 0, profilePic: pfpKey });
-                        localStorage.setItem('users', JSON.stringify(users));
+            
+                if (!usernameTrim || !passwordTrim) {
+                    alert('Vnesi uporabniško ime in geslo!');
+                    return;
+                }
+            
+                try {
+                    const res = await fetch('/api/users/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            username: usernameTrim,
+                            password: passwordTrim
+                        })
+                    });
+            
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.message || 'Napaka pri prijavi.');
+                        return;
                     }
-
-                    localStorage.setItem('username', usernameTrim);
-                    localStorage.setItem('profilePic', pfpKey);
-
+            
+                    const user = await res.json();
+            
+                    const avatarPath = user.avatarPath || 'avatar1';
+            
+                    localStorage.setItem('userId', user._id);
+                    localStorage.setItem('username', user.username);
+                    localStorage.setItem('profilePic', avatarPath);
+            
                     username.remove();
                     password.remove();
-
+            
                     this.scene.start('LabScene');
-                } else {
-                    alert('Vnesi uporabniško ime in geslo!');
+                } catch (e) {
+                    console.error(e);
+                    alert('Napaka pri povezavi s strežnikom.');
                 }
             });
 
@@ -211,6 +223,23 @@ export default class LoginScene extends Phaser.Scene {
             username.remove();
             password.remove();
         });
+
+        const registerTextY = buttonY + 60;
+
+        const registerButton = this.add.text(rectX, registerTextY, '📝 Ustvari nov račun', {
+            fontFamily: 'Arial',
+            fontSize: '18px',
+            color: '#0066ff'
+        })
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true })
+            .on('pointerover', () => registerButton.setStyle({ color: '#0044cc' }))
+            .on('pointerout', () => registerButton.setStyle({ color: '#0066ff' }))
+            .on('pointerdown', () => {
+                username.remove();
+                password.remove();
+                this.scene.start('RegisterScene');
+            });
 
         const backButton = this.add.text(40, 30, '↩ Nazaj v meni', {
             fontFamily: 'Arial',
