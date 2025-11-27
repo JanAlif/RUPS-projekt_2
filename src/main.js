@@ -11,6 +11,8 @@ import LoginScene from './scenes/loginScene';
 import ScoreboardScene from './scenes/scoreboardScene';
 import WorkspaceScene from './scenes/workspaceScene';
 import RegisterScene from './scenes/RegisterScene';
+import BootScene from './scenes/BootScene';
+import ProfileScene from './scenes/profileScene';
 
 const config = {
   type: Phaser.AUTO,            
@@ -20,6 +22,7 @@ const config = {
   parent: 'game-container',      
   scene: [
     // uvoz scen
+    BootScene,
     MenuScene,
     LabScene,
     WorkspaceScene,
@@ -28,7 +31,8 @@ const config = {
     TestScene,
     LoginScene,
     ScoreboardScene,
-    RegisterScene
+    RegisterScene,
+    ProfileScene
   ],
   physics: {
     default: 'arcade',           

@@ -125,39 +125,38 @@ export async function updateUserPassword(req, res) {
   }
 }
 
-// PUT /api/users/:id/scores  (posodobitev točk / highScore / totalPoints)
+// PUT /api/users/:id/scores  (posodobitev točk uporabnika po končanem sessionu)
 export async function updateUserScores(req, res) {
   try {
-    const { id } = req.params;
-    const { pointsDelta } = req.body; // število točk, ki jih dodamo
+    const userId = req.params.id;
+    const { sessionScore } = req.body;
 
-    if (typeof pointsDelta !== "number") {
-      return res
-        .status(400)
-        .json({ message: "pointsDelta mora biti številka." });
+    if (typeof sessionScore !== 'number' || sessionScore < 0) {
+      return res.status(400).json({ message: 'Neveljaven sessionScore.' });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findById(userId);
     if (!user) {
-      return res.status(404).json({ message: "Uporabnik ni najden." });
+      return res.status(404).json({ message: 'Uporabnik ne obstaja.' });
     }
 
-    // trenutne točke povečamo
-    user.points = (user.points || 0) + pointsDelta;
+    // points = score prejšnjega sessiona
+    user.points = sessionScore;
 
-    // highScore posodobimo, če je novi skupni rezultat večji
-    if (user.points > user.highScore) {
-      user.highScore = user.points;
+    // totalPoints = kumulativno
+    user.totalPoints = (user.totalPoints || 0) + sessionScore;
+
+    // highScore = največ v enem sessionu
+    const currentHigh = user.highScore || 0;
+    if (sessionScore > currentHigh) {
+      user.highScore = sessionScore;
     }
 
-    // kumulativne točke (vse točke skozi čas)
-    user.totalPoints += pointsDelta;
-
-    const updated = await user.save();
-    res.json(updated);
+    await user.save();
+    res.json(user);
   } catch (err) {
-    console.error("updateUserScores error:", err);
-    res.status(500).json({ message: "Napaka pri posodobitvi točk." });
+    console.error('updateUserScores error:', err);
+    res.status(500).json({ message: 'Napaka pri posodobitvi točk.' });
   }
 }
 
@@ -173,5 +172,19 @@ export async function getLeaderboard(req, res) {
   } catch (err) {
     console.error("getLeaderboard error:", err);
     res.status(500).json({ message: "Napaka pri pridobivanju lestvice." });
+  }
+}
+
+export async function getUserById(req, res) {
+  try {
+    const { id } = req.params;
+    const user = await User.findById(id).select("-passwordHash");
+    if (!user) {
+      return res.status(404).json({ message: "Uporabnik ne obstaja." });
+    }
+    res.json(user);
+  } catch (err) {
+    console.error("getUserById error:", err);
+    res.status(500).json({ message: "Napaka pri pridobivanju uporabnika." });
   }
 }

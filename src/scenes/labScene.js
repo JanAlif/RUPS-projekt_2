@@ -193,6 +193,33 @@ export default class LabScene extends Phaser.Scene {
     // });
 
     //console.log(`${localStorage.getItem('username')}`);
-    console.log(JSON.parse(localStorage.getItem('users')));
-  }
+   // 🔹 Profil gumb – levo od "Lestvica"
+   const profileButtonBg = this.add.graphics();
+   const profileX = width - buttonWidth - rightMargin - buttonWidth - 20; // malo levo od lestvice
+   profileButtonBg.fillStyle(0x555555, 1);
+   profileButtonBg.fillRoundedRect(profileX, topMargin, buttonWidth, buttonHeight, cornerRadius);
+
+   const profileButton = this.add.text(profileX + buttonWidth / 2, topMargin + buttonHeight / 2, 'Profil', {
+     fontFamily: 'Arial',
+     fontSize: '20px',
+     color: '#ffffff'
+   })
+     .setOrigin(0.5)
+     .setInteractive({ useHandCursor: true })
+     .on('pointerover', () => {
+       profileButtonBg.clear();
+       profileButtonBg.fillStyle(0x333333, 1);
+       profileButtonBg.fillRoundedRect(profileX, topMargin, buttonWidth, buttonHeight, cornerRadius);
+     })
+     .on('pointerout', () => {
+       profileButtonBg.clear();
+       profileButtonBg.fillStyle(0x555555, 1);
+       profileButtonBg.fillRoundedRect(profileX, topMargin, buttonWidth, buttonHeight, cornerRadius);
+     })
+     .on('pointerdown', () => {
+       this.scene.start('ProfileScene');
+     });
+
+   console.log(JSON.parse(localStorage.getItem('users')));
+ }
 }

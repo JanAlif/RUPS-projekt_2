@@ -7,12 +7,15 @@ import {
   updateUserPassword,
   updateUserScores,
   getLeaderboard,
+  getUserById,
 } from "../controllers/userController.js";
 
 const router = Router();
 
 // GET /api/users/leaderboard
 router.get("/leaderboard", getLeaderboard);
+
+router.get("/:id", getUserById);
 
 // POST /api/users/register
 router.post("/register", registerUser);
@@ -27,6 +30,6 @@ router.put("/:id", updateUserProfile);
 router.put("/:id/password", updateUserPassword);
 
 // PUT /api/users/:id/scores  -> update points, highScore, totalPoints
-router.put("/:id/scores", updateUserScores);
+router.put('/:id/scores', updateUserScores);
 
 export default router;
