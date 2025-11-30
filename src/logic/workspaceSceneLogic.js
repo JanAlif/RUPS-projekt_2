@@ -1,4 +1,5 @@
 // src/logic/workspaceSceneLogic.js
+import Phaser from 'phaser';
 import { Battery } from '../components/battery';
 import { Bulb } from '../components/bulb';
 import { Wire } from '../components/wire';
@@ -174,7 +175,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'baterija')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(130, 130);
       component.add(componentImage);
       component.setData('logicComponent', comp);
       break;
@@ -332,6 +333,7 @@ export function createComponent(scene, x, y, type, color) {
   component.setData('rotation', 0);
   if (comp) component.setData('logicComponent', comp);
   component.setData('isDragging', false);
+  component.setData('wasDragged', false);
 
   scene.input.setDraggable(component);
 
@@ -342,6 +344,7 @@ export function createComponent(scene, x, y, type, color) {
   component.on('drag', (pointer, dragX, dragY) => {
     component.x = dragX;
     component.y = dragY;
+    component.setData('wasDragged', true);
   });
 
   component.on('dragend', () => {
@@ -387,33 +390,30 @@ export function createComponent(scene, x, y, type, color) {
       updateLogicNodePositions(scene, component);
     }
 
-    scene.time.delayedCall(500, () => {
-      component.setData('isDragging', false);
-    });
+    component.setData('isDragging', false);
   });
 
-  component.on('pointerdown', () => {
-    if (!component.getData('isInPanel')) {
-      const currentRotation = component.getData('rotation');
-      const newRotation = (currentRotation + 90) % 360;
-      component.setData('rotation', newRotation);
-      component.setData('isRotated', !component.getData('isRotated'));
 
-      scene.tweens.add({
-        targets: component,
-        angle: newRotation,
-        duration: 150,
-        ease: 'Cubic.easeOut',
-      });
+  component.on('pointerup', (pointer) => {
+    if (component.getData('isInPanel')) return;
+    if (component.getData('wasDragged')) {
+      component.setData('wasDragged', false);
+      return;
     }
-  });
 
-  component.on('pointerover', () => {
-    component.setScale(1.1);
-  });
+    const currentRotation = component.getData('rotation') || 0;
+    const logicalRotation = (currentRotation + 90) % 360; // for your own data
+    component.setData('rotation', logicalRotation);
+    component.setData('isRotated', !component.getData('isRotated'));
 
-  component.on('pointerout', () => {
-    component.setScale(1);
+    const targetAngle = componentImage.angle + 90; // always +90 from current
+
+    scene.tweens.add({
+      targets: componentImage,
+      angle: targetAngle,
+      duration: 150,
+      ease: 'Cubic.easeOut',
+    });
   });
 }
 

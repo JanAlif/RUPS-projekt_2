@@ -41,20 +41,35 @@ export default class WorkspaceScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
     localStorage.setItem('lastScene', 'WorkspaceScene');
 
-    // površje mize + grid
-    const desk = this.add
-      .rectangle(0, 0, width, height, 0xe0c9a6)
-      .setOrigin(0);
+    // ozadje + površje mize
+    const background = this.add.graphics();
+    background.fillGradientStyle(0xf5f7ff, 0xe8f0ff, 0xf8fbff, 0xeff3ff, 1);
+    background.fillRect(0, 0, width, height);
+    background.setDepth(-5);
+
+    const deskPanel = this.add.graphics();
+    deskPanel.fillStyle(0xffffff, 0.94);
+    deskPanel.fillRoundedRect(190, 20, width - 220, height - 60, 18);
+    deskPanel.lineStyle(2, 0xdfe6f3, 1);
+    deskPanel.strokeRoundedRect(190, 20, width - 220, height - 60, 18);
+    deskPanel.setDepth(-1);
+
+    // mreža na delovni površini
     const gridGraphics = this.add.graphics();
-    gridGraphics.lineStyle(1, 0x8b7355, 0.35);
+    gridGraphics.lineStyle(1, 0x8ba0c6, 0.22);
     const gridSize = 40;
-    for (let x = 0; x < width; x += gridSize) {
+    const gridStartX = 200;
+    const gridStartY = 40;
+    const gridEndX = width - 30;
+    const gridEndY = height - 40;
+
+    for (let x = gridStartX; x < gridEndX; x += gridSize) {
       gridGraphics.beginPath();
       gridGraphics.moveTo(x, 0);
       gridGraphics.lineTo(x, height);
       gridGraphics.strokePath();
     }
-    for (let y = 0; y < height; y += gridSize) {
+    for (let y = gridStartY; y < gridEndY; y += gridSize) {
       gridGraphics.beginPath();
       gridGraphics.moveTo(0, y);
       gridGraphics.lineTo(width, y);
@@ -66,8 +81,8 @@ export default class WorkspaceScene extends Phaser.Scene {
     this.infoWindow.setDepth(1000);
     this.infoWindow.setVisible(false);
 
-    const infoBox = this.add.rectangle(0, 0, 200, 80, 0x2c2c2c, 0.95);
-    infoBox.setStrokeStyle(2, 0xffffff);
+    const infoBox = this.add.rectangle(0, 0, 220, 90, 0x0f172a, 0.92);
+    infoBox.setStrokeStyle(2, 0x4b5563, 0.7);
     const infoText = this.add
       .text(0, 0, '', {
         fontSize: '14px',
@@ -84,10 +99,10 @@ export default class WorkspaceScene extends Phaser.Scene {
     this.promptText = this.add
       .text(width / 1.8, height - 30, 'Nalagam izzive...', {
         fontSize: '20px',
-        color: '#333',
+        color: '#0f172a',
         fontStyle: 'bold',
-        backgroundColor: '#ffffff88',
-        padding: { x: 15, y: 8 },
+        backgroundColor: '#ffffffee',
+        padding: { x: 18, y: 10 },
       })
       .setOrigin(0.5);
 
@@ -107,7 +122,7 @@ export default class WorkspaceScene extends Phaser.Scene {
 
     const makeButton = (x, y, label, onClick) => {
       const bg = this.add.graphics();
-      bg.fillStyle(0x3399ff, 1);
+      bg.fillGradientStyle(0x2563eb, 0x1d4ed8, 0x1e40af, 0x1d4ed8, 1);
       bg.fillRoundedRect(
         x - buttonWidth / 2,
         y - buttonHeight / 2,
@@ -126,7 +141,7 @@ export default class WorkspaceScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
           bg.clear();
-          bg.fillStyle(0x0f5cad, 1);
+          bg.fillGradientStyle(0x1e40af, 0x1d4ed8, 0x1d4ed8, 0x1e3a8a, 1);
           bg.fillRoundedRect(
             x - buttonWidth / 2,
             y - buttonHeight / 2,
@@ -137,7 +152,7 @@ export default class WorkspaceScene extends Phaser.Scene {
         })
         .on('pointerout', () => {
           bg.clear();
-          bg.fillStyle(0x3399ff, 1);
+          bg.fillGradientStyle(0x2563eb, 0x1d4ed8, 0x1e40af, 0x1d4ed8, 1);
           bg.fillRoundedRect(
             x - buttonWidth / 2,
             y - buttonHeight / 2,
@@ -152,7 +167,10 @@ export default class WorkspaceScene extends Phaser.Scene {
     };
 
     makeButton(width - 140, 75, 'Lestvica', () =>
-      this.scene.start('ScoreboardScene', { cameFromMenu: false })
+      this.scene.start('ScoreboardScene', {
+        cameFromMenu: false,
+        previousScene: 'WorkspaceScene',
+      })
     );
     makeButton(width - 140, 125, 'Preveri krog', () => checkCircuit(this));
     makeButton(width - 140, 175, 'Simulacija', () =>
@@ -160,16 +178,17 @@ export default class WorkspaceScene extends Phaser.Scene {
     );
 
     // stranska vrstica
-    const panelWidth = 150;
-    this.add.rectangle(0, 0, panelWidth, height, 0xc0c0c0).setOrigin(0);
-    this.add
-      .rectangle(0, 0, panelWidth, height, 0x000000, 0.2)
-      .setOrigin(0);
+    const panelWidth = 170;
+    const sidePanel = this.add.graphics();
+    sidePanel.fillStyle(0x0f172a, 0.96);
+    sidePanel.fillRoundedRect(0, 0, panelWidth, height, 0);
+    sidePanel.lineStyle(2, 0x1f2937, 1);
+    sidePanel.strokeRoundedRect(0, 0, panelWidth, height, 0);
 
     this.add
       .text(panelWidth / 2, 60, 'Komponente', {
         fontSize: '18px',
-        color: '#ffffff',
+        color: '#e5e7eb',
         fontStyle: 'bold',
       })
       .setOrigin(0.5);
@@ -185,37 +204,33 @@ export default class WorkspaceScene extends Phaser.Scene {
     createComponent(this, panelWidth / 2, 660, 'voltmeter', 0x00cc66);
 
     // back button
-    
+
     const backButton = this.add
-    .text(12, 10, '↩ Nazaj', {
-      fontFamily: 'Arial',
-      fontSize: '20px',
-      color: '#387affff',
-      padding: { x: 20, y: 10 },
-    })
-    .setOrigin(0, 0)
-    .setInteractive({ useHandCursor: true })
-    .on('pointerover', () =>
-      backButton.setStyle({ color: '#0054fdff' })
-    )
-    .on('pointerout', () =>
-      backButton.setStyle({ color: '#387affff' })
-    )
-    .on('pointerdown', async () => {
-      // 1️⃣ zaključi session in pošlji score v bazo
-      await finalizeSession(this);
-    
-      // 2️⃣ pobriši localStorage state za WorkspaceScene
-      resetWorkspaceProgress();
-    
-      // 3️⃣ označi, da zadnja scena ni več Workspace
-      localStorage.setItem('lastScene', 'LabScene');
-    
-      this.cameras.main.fade(300, 0, 0, 0);
-      this.time.delayedCall(300, () => {
-        this.scene.start('LabScene');
+      .text(16, 14, '↩ Meni', {
+        fontFamily: 'Arial',
+        fontSize: '20px',
+        color: '#8ab4ff',
+        padding: { x: 18, y: 10 },
+      })
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerover', () =>
+        backButton.setStyle({ color: '#cde3ff' })
+      )
+      .on('pointerout', () =>
+        backButton.setStyle({ color: '#8ab4ff' })
+      )
+      .on('pointerdown', async () => {
+        await finalizeSession(this);
+        resetWorkspaceProgress();
+        localStorage.setItem('lastScene', 'LabScene');
+
+        this.scene.start('LabScene', { cameFromMenu: false });
+        /*this.cameras.main.fade(300, 0, 0, 0);
+        this.time.delayedCall(300, () => {
+          this.scene.start('ScoreboardScene', { cameFromMenu: false });
+        });*/
       });
-    });
 
     this.add
       .text(
@@ -224,10 +239,10 @@ export default class WorkspaceScene extends Phaser.Scene {
         'Povleci komponente na mizo in zgradi svoj električni krog!',
         {
           fontSize: '20px',
-          color: '#333',
+          color: '#0f172a',
           fontStyle: 'bold',
           align: 'center',
-          backgroundColor: '#ffffff88',
+          backgroundColor: '#ffffffdd',
           padding: { x: 15, y: 8 },
         }
       )
