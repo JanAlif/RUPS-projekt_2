@@ -1,5 +1,6 @@
 // src/scenes/RegisterScene.js
 import Phaser from 'phaser';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 export default class RegisterScene extends Phaser.Scene {
     constructor() {
@@ -8,33 +9,35 @@ export default class RegisterScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
+        const ui = getUiScale(this.scale);
 
         // --- Ozadje (isto kot LoginScene) ---
-        this.add.rectangle(0, 0, width, height - 150, 0xe8e8e8).setOrigin(0);
-        this.add.rectangle(0, height - 150, width, 150, 0xd4c4a8).setOrigin(0);
+        const floorHeight = Math.max(120 * ui, Math.min(160, height * 0.24));
+        this.add.rectangle(0, 0, width, height - floorHeight, 0xe8e8e8).setOrigin(0);
+        this.add.rectangle(0, height - floorHeight, width, floorHeight, 0xd4c4a8).setOrigin(0);
 
         const tableX = width / 2;
-        const tableY = height / 2 + 50;
-        const tableWidth = 500;
-        const tableHeight = 250;
+        const tableY = height / 2 + 50 * ui;
+        const tableWidth = Math.min(520 * ui, width - 120);
+        const tableHeight = Math.min(260 * ui, height * 0.48);
 
         this.add.rectangle(tableX, tableY, tableWidth, 30, 0x8b4513).setOrigin(0.5);
 
         const surface = this.add.rectangle(
             tableX,
             tableY + 15,
-            tableWidth - 30,
-            tableHeight - 30,
+            tableWidth - 30 * ui,
+            tableHeight - 30 * ui,
             0xa0826d
         ).setOrigin(0.5, 0);
 
         const grid = this.add.graphics();
         grid.lineStyle(1, 0x8b7355, 0.3);
-        const gridSize = 30;
-        const gridStartX = tableX - (tableWidth - 30) / 2;
+        const gridSize = 30 * ui;
+        const gridStartX = tableX - (tableWidth - 30 * ui) / 2;
         const gridStartY = tableY + 15;
-        const gridEndX = tableX + (tableWidth - 30) / 2;
-        const gridEndY = tableY + 15 + (tableHeight - 30);
+        const gridEndX = tableX + (tableWidth - 30 * ui) / 2;
+        const gridEndY = tableY + 15 + (tableHeight - 30 * ui);
 
         for (let x = gridStartX; x <= gridEndX; x += gridSize) {
             grid.beginPath();
@@ -50,7 +53,7 @@ export default class RegisterScene extends Phaser.Scene {
         }
 
         const legWidth = 20;
-        const legHeight = 150;
+        const legHeight = 150 * ui;
         this.add.rectangle(
             tableX - tableWidth / 2 + 40,
             tableY + tableHeight / 2 + 20,
@@ -66,10 +69,10 @@ export default class RegisterScene extends Phaser.Scene {
             0x654321
         );
 
-        const panelWidth = 500;
-        const panelHeight = 360;
+        const panelWidth = Math.min(520 * ui, width - 100);
+        const panelHeight = Math.min(380 * ui, height - floorHeight - 70);
         const panelX = width / 2 - panelWidth / 2;
-        const panelY = height / 2 - panelHeight / 2 - 30;
+        const panelY = Math.max(40, height / 2 - panelHeight / 2 - 30 * ui);
 
         const panel = this.add.graphics();
         panel.fillStyle(0xffffff, 0.92);
@@ -78,15 +81,15 @@ export default class RegisterScene extends Phaser.Scene {
         panel.strokeRoundedRect(panelX, panelY, panelWidth, panelHeight, 25);
 
         // naslov
-        this.add.text(width / 2, panelY + 40, 'REGISTRACIJA', {
+        this.add.text(width / 2, panelY + 40 * ui, 'REGISTRACIJA', {
             fontFamily: 'Arial',
-            fontSize: '32px',
+            fontSize: `${Math.round(32 * ui)}px`,
             fontStyle: 'bold',
             color: '#222'
         }).setOrigin(0.5);
 
-        const inputWidth = 350;
-        const inputHeight = 40;
+        const inputWidth = Math.min(360 * ui, width - 140);
+        const inputHeight = 40 * ui;
 
         // USERNAME
         const username = document.createElement('input');
@@ -98,12 +101,12 @@ export default class RegisterScene extends Phaser.Scene {
             width: `${inputWidth}px`,
             height: `${inputHeight}px`,
             left: `${width / 2 - inputWidth / 2}px`,
-            top: `${panelY + 90}px`,
+            top: `${panelY + 90 * ui}px`,
             borderRadius: '8px',
             padding: '5px',
             border: '1px solid #ccc',
             textAlign: 'center',
-            fontSize: '18px',
+            fontSize: `${Math.round(18 * ui)}px`,
             outline: 'none',
             backgroundColor: '#f9f9f9'
         });
@@ -119,12 +122,12 @@ export default class RegisterScene extends Phaser.Scene {
             width: `${inputWidth}px`,
             height: `${inputHeight}px`,
             left: `${width / 2 - inputWidth / 2}px`,
-            top: `${panelY + 145}px`,
+            top: `${panelY + 145 * ui}px`,
             borderRadius: '8px',
             padding: '5px',
             border: '1px solid #ccc',
             textAlign: 'center',
-            fontSize: '18px',
+            fontSize: `${Math.round(18 * ui)}px`,
             outline: 'none',
             backgroundColor: '#f9f9f9'
         });
@@ -140,12 +143,12 @@ export default class RegisterScene extends Phaser.Scene {
             width: `${inputWidth}px`,
             height: `${inputHeight}px`,
             left: `${width / 2 - inputWidth / 2}px`,
-            top: `${panelY + 200}px`,
+            top: `${panelY + 200 * ui}px`,
             borderRadius: '8px',
             padding: '5px',
             border: '1px solid #ccc',
             textAlign: 'center',
-            fontSize: '18px',
+            fontSize: `${Math.round(18 * ui)}px`,
             outline: 'none',
             backgroundColor: '#f9f9f9'
         });
@@ -157,10 +160,10 @@ export default class RegisterScene extends Phaser.Scene {
             'avatar6','avatar7','avatar8','avatar9','avatar10','avatar11'
         ];
 
-        const buttonWidth = 200;
-        const buttonHeight = 45;
-        const cornerRadius = 10;
-        const buttonY = panelY + 280;
+        const buttonWidth = 200 * ui;
+        const buttonHeight = 45 * ui;
+        const cornerRadius = 10 * ui;
+        const buttonY = panelY + 280 * ui;
         const rectX = width / 2;
 
         const registerButtonBg = this.add.graphics();
@@ -175,7 +178,7 @@ export default class RegisterScene extends Phaser.Scene {
 
         const registerButton = this.add.text(rectX, buttonY, '✅ Ustvari račun', {
             fontFamily: 'Arial',
-            fontSize: '22px',
+            fontSize: `${Math.round(22 * ui)}px`,
             color: '#ffffff'
         })
             .setOrigin(0.5)
@@ -257,7 +260,7 @@ export default class RegisterScene extends Phaser.Scene {
         // gumb nazaj na login
         const backButton = this.add.text(40, 30, '↩ Nazaj na prijavo', {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: `${Math.round(20 * ui)}px`,
             color: '#0066ff',
         })
             .setOrigin(0, 0)
@@ -276,6 +279,13 @@ export default class RegisterScene extends Phaser.Scene {
             username.remove();
             password.remove();
             password2.remove();
+        });
+
+        attachResize(this, () => {
+            username.remove();
+            password.remove();
+            password2.remove();
+            this.scene.restart();
         });
     }
 }

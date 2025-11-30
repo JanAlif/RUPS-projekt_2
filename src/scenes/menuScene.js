@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 export default class MenuScene extends Phaser.Scene {
     constructor() {
@@ -22,22 +23,23 @@ export default class MenuScene extends Phaser.Scene {
 
     create() {
         const { width, height } = this.scale;
+        const ui = getUiScale(this.scale);
 
         this.children.removeAll(true); // odstrani vse objekte iz prejsnje scene
         this.fixedComponents = [];
         this.isSwitchOn = false;
 
         // ozdaje
-        this.createDeskBackground(width, height);
+        this.createDeskBackground(width, height, ui);
 
         // zice 
         this.cameras.main.setBackgroundColor('#ffffff');
         const wireThickness = 9.5;
         const wireColor = 0x1a1a1a;
-        const rectWidth = 900;
-        const rectHeight = 440;
+        const rectWidth = Math.min(900 * ui, width * 0.82);
+        const rectHeight = Math.min(440 * ui, height * 0.55);
         const rectX = width / 2;
-        const rectY = height / 2 - 30;
+        const rectY = height / 2 - 30 * ui;
 
         const leftWireX = rectX - rectWidth / 2;
         const rightWireX = rectX + rectWidth / 2;
@@ -57,7 +59,7 @@ export default class MenuScene extends Phaser.Scene {
         // stikalo
         const switchOffsetY = -18.5;
         this.switchButton = this.add.image(rectX, bottomWireY + switchOffsetY, 'switch-off')
-            .setScale(0.7)
+            .setScale(0.7 * ui)
             .setOrigin(0.5)
             .setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.toggleSwitch());
@@ -74,9 +76,11 @@ export default class MenuScene extends Phaser.Scene {
         // komponente
         this.createComponents(width, height, rectX, rectY);
         this.hideComponents();
+
+        attachResize(this, () => this.scene.restart());
     }
 
-    createDeskBackground(width, height) {
+    createDeskBackground(width, height, ui) {
         // svetla lesena povrsina
         this.desk = this.add.rectangle(0, 0, width, height, 0xe0c9a6)
             .setOrigin(0)
@@ -88,7 +92,7 @@ export default class MenuScene extends Phaser.Scene {
         this.gridGraphics.setDepth(-1);
         this.gridGraphics.lineStyle(1, 0x8b7355, 0.35);
 
-        const gridSize = 40;
+        const gridSize = 40 * ui;
         for (let x = 0; x < width; x += gridSize) {
             this.gridGraphics.beginPath();
             this.gridGraphics.moveTo(x, 0);
@@ -104,19 +108,21 @@ export default class MenuScene extends Phaser.Scene {
     }
 
     createComponents(width, height, rectX, rectY) {
+        const spreadX = Math.min(550, width * 0.45);
+        const spreadY = Math.min(300, height * 0.35);
         const positions = [
-            { x: 150, y: 150, type: 'battery' },
-            { x: width - 150, y: 170, type: 'resistor' },
-            { x: 120, y: height - 180, type: 'resistor' },
-            { x: width - 180, y: height - 160, type: 'battery' },
-            { x: rectX - 550, y: rectY, type: 'lamp' },
-            { x: rectX + 550, y: rectY - 20, type: 'lamp' },
-            { x: rectX + 50, y: rectY + 290, type: 'battery' },
-            { x: rectX + 300, y: rectY - 280, type: 'lamp' },
-            { x: rectX - 400, y: rectY - 280, type: 'resistor' },
-            { x: rectX, y: rectY - 300, type: 'battery' },
-            { x: rectX - 350, y: rectY + 290, type: 'lamp' },
-            { x: rectX + 350, y: rectY + 290, type: 'resistor' }
+            { x: Math.max(100, width * 0.15), y: Math.max(110, height * 0.18), type: 'battery' },
+            { x: Math.min(width - 100, width * 0.85), y: Math.max(120, height * 0.2), type: 'resistor' },
+            { x: Math.max(100, width * 0.12), y: Math.min(height - 140, height * 0.75), type: 'resistor' },
+            { x: Math.min(width - 110, width * 0.88), y: Math.min(height - 120, height * 0.78), type: 'battery' },
+            { x: rectX - spreadX, y: rectY, type: 'lamp' },
+            { x: rectX + spreadX, y: rectY - 20, type: 'lamp' },
+            { x: rectX + 50, y: rectY + spreadY, type: 'battery' },
+            { x: rectX + spreadX * 0.55, y: rectY - spreadY * 0.95, type: 'lamp' },
+            { x: rectX - spreadX * 0.75, y: rectY - spreadY * 0.95, type: 'resistor' },
+            { x: rectX, y: rectY - spreadY * 1.05, type: 'battery' },
+            { x: rectX - spreadX * 0.65, y: rectY + spreadY, type: 'lamp' },
+            { x: rectX + spreadX * 0.65, y: rectY + spreadY, type: 'resistor' }
         ];
 
         positions.forEach(pos => {
@@ -189,18 +195,19 @@ export default class MenuScene extends Phaser.Scene {
     createUI() {
        const rectX = this.scale.width / 2;
         const rectY = this.scale.height / 2 - 50;
+        const ui = getUiScale(this.scale);
         
         // vogali gumba
-        const cornerRadius = 15; 
-        const buttonWidth = 250; 
-        const buttonHeight = 60;
+        const cornerRadius = 15 * ui; 
+        const buttonWidth = 250 * ui; 
+        const buttonHeight = 60 * ui;
         
         // ozadje gumba
         this.startButtonBackground = this.add.graphics();
         this.startButtonBackground.fillStyle(0xdddddd, 1); // siva
         this.startButtonBackground.fillRoundedRect(
             rectX - buttonWidth / 2, // X zacetek
-            (rectY + 100) - buttonHeight / 2, // Y zacetek
+            (rectY + 100 * ui) - buttonHeight / 2, // Y zacetek
             buttonWidth, 
             buttonHeight, 
             cornerRadius // Polmer!
@@ -210,7 +217,7 @@ export default class MenuScene extends Phaser.Scene {
         // naslov
         this.title = this.add.text(rectX, rectY, 'LABORATORIJ', { 
             fontFamily: 'Arial', 
-            fontSize: '72px', 
+            fontSize: `${Math.round(72 * ui)}px`, 
             fontStyle: 'bold', 
             color: '#222222' 
         }).setOrigin(0.5);
@@ -218,7 +225,7 @@ export default class MenuScene extends Phaser.Scene {
         // gumb
         this.loginButton = this.add.text(rectX, rectY + 100, '▶ Začni igro', {
             fontFamily: 'Arial',
-            fontSize: '32px',
+            fontSize: `${Math.round(32 * ui)}px`,
             color: '#aaaaaa', 
         })
             .setOrigin(0.5)
@@ -227,11 +234,11 @@ export default class MenuScene extends Phaser.Scene {
             // hower
             .on('pointerover', () => {
                 if (this.isSwitchOn)
-                    this.startButtonBackground.fillStyle(0x0f5cadff, 1).fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+                    this.startButtonBackground.fillStyle(0x0f5cadff, 1).fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100 * ui) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
             })
             .on('pointerout', () => {
                 if (this.isSwitchOn)
-                    this.startButtonBackground.fillStyle(0x3399ff, 1).fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+                    this.startButtonBackground.fillStyle(0x3399ff, 1).fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100 * ui) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
             })
             .on('pointerdown', () => {
                 if (this.isSwitchOn) this.scene.start('LoginScene');
@@ -251,9 +258,10 @@ export default class MenuScene extends Phaser.Scene {
 
 enableStartButton(isActive) {
         // zaobljen gumb
-        const cornerRadius = 15;
-        const buttonWidth = 250;
-        const buttonHeight = 60;
+        const ui = getUiScale(this.scale);
+        const cornerRadius = 15 * ui;
+        const buttonWidth = 250 * ui;
+        const buttonHeight = 60 * ui;
         const rectX = this.scale.width / 2;
         const rectY = this.scale.height / 2 - 50;
 
@@ -264,7 +272,7 @@ enableStartButton(isActive) {
             // novo ozadje
             this.startButtonBackground.clear();
             this.startButtonBackground.fillStyle(0x3399ff, 1); 
-            this.startButtonBackground.fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+            this.startButtonBackground.fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100 * ui) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         } else {
             this.loginButton.setStyle({
                 color: '#aaaaaa', // spremeni samo barvo besedila
@@ -272,7 +280,7 @@ enableStartButton(isActive) {
             // novo ozadje
             this.startButtonBackground.clear();
             this.startButtonBackground.fillStyle(0xdddddd, 1);
-            this.startButtonBackground.fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
+            this.startButtonBackground.fillRoundedRect(rectX - buttonWidth / 2, (rectY + 100 * ui) - buttonHeight / 2, buttonWidth, buttonHeight, cornerRadius);
         }
     }
 }

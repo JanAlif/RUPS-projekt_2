@@ -1,5 +1,6 @@
 // src/scenes/ProfileScene.js
 import Phaser from 'phaser';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 export default class ProfileScene extends Phaser.Scene {
   constructor() {
@@ -25,13 +26,14 @@ export default class ProfileScene extends Phaser.Scene {
 
   async create() {
     const { width, height } = this.cameras.main;
+    const ui = getUiScale(this.scale);
 
     // ozadje
     this.add.rectangle(0, 0, width, height, 0xe9f0ff).setOrigin(0);
 
     // malo večji panel
-    const panelWidth = Math.min(860, width - 60);
-    const panelHeight = 540;
+    const panelWidth = Math.min(860 * ui, width - 40);
+    const panelHeight = Math.min(560 * ui, height - 60);
 
     this.add.rectangle(
       width / 2 + 6,
@@ -52,9 +54,9 @@ export default class ProfileScene extends Phaser.Scene {
       .setStrokeStyle(2, 0xced4e0);
 
     // naslov
-    this.add.text(width / 2, height / 2 - panelHeight / 2 + 45, 'Moj profil', {
+    this.add.text(width / 2, height / 2 - panelHeight / 2 + 45 * ui, 'Moj profil', {
       fontFamily: 'Arial',
-      fontSize: '32px',
+      fontSize: `${Math.round(32 * ui)}px`,
       fontStyle: 'bold',
       color: '#222222'
     }).setOrigin(0.5);
@@ -63,33 +65,33 @@ export default class ProfileScene extends Phaser.Scene {
     if (!userId) {
       this.add.text(width / 2, height / 2, 'Napaka: ni prijavljenega uporabnika.', {
         fontFamily: 'Arial',
-        fontSize: '20px',
+        fontSize: `${Math.round(20 * ui)}px`,
         color: '#cc0000',
       }).setOrigin(0.5);
       return;
     }
 
     // levi stolpec: ime + statistika
-    const leftX = width / 2 - panelWidth / 2 + 50;
-    const topY = height / 2 - panelHeight / 2 + 100;
+    const leftX = width / 2 - panelWidth / 2 + 50 * ui;
+    const topY = height / 2 - panelHeight / 2 + 100 * ui;
 
     const usernameText = this.add.text(leftX, topY, 'Uporabnik: ...', {
       fontFamily: 'Courier New',
-      fontSize: '20px',
+      fontSize: `${Math.round(20 * ui)}px`,
       color: '#333333',
     });
 
     const statsText = this.add.text(leftX, topY + 40, 'Nalagam statistiko...', {
       fontFamily: 'Courier New',
-      fontSize: '18px',
+      fontSize: `${Math.round(18 * ui)}px`,
       color: '#555555',
       lineSpacing: 6
     });
 
     // desno zgoraj: velik avatar
-    const avatarBigX = width / 2 + panelWidth / 2 - 120;
-    const avatarBigY = height / 2 - panelHeight / 2 + 130;
-    const avatarRadius = 50;
+    const avatarBigX = width / 2 + panelWidth / 2 - 120 * ui;
+    const avatarBigY = height / 2 - panelHeight / 2 + 130 * ui;
+    const avatarRadius = 50 * ui;
 
     const avatarOuter = this.add.circle(
       avatarBigX,
@@ -139,15 +141,15 @@ export default class ProfileScene extends Phaser.Scene {
     }
 
     // ---- gumbi za ime/geslo (pod statistiko) ----
-    const buttonsY = topY + 150;
+    const buttonsY = topY + 150 * ui;
 
     const makeButton = (x, y, w, label, bgColor, hoverColor, textColor, onClick) => {
-      const bg = this.add.rectangle(x, y, w, 42, bgColor)
+      const bg = this.add.rectangle(x, y, w, 42 * ui, bgColor)
         .setOrigin(0, 0.5)
         .setStrokeStyle(1, 0x444444);
       this.add.text(x + w / 2, y, label, {
         fontFamily: 'Arial',
-        fontSize: '18px',
+        fontSize: `${Math.round(18 * ui)}px`,
         color: textColor,
       }).setOrigin(0.5)
         .setInteractive({ useHandCursor: true })
@@ -161,7 +163,7 @@ export default class ProfileScene extends Phaser.Scene {
     makeButton(
       leftX,
       buttonsY,
-      190,
+      190 * ui,
       'Spremeni ime',
       0x3399ff,
       0x1f6fcc,
@@ -196,7 +198,7 @@ export default class ProfileScene extends Phaser.Scene {
     makeButton(
       leftX,
       buttonsY + 55,
-      210,
+      210 * ui,
       'Spremeni geslo',
       0x666666,
       0x444444,
@@ -207,13 +209,13 @@ export default class ProfileScene extends Phaser.Scene {
     );
 
     // Nazaj
-    const backY = height / 2 + panelHeight / 2 - 40;
-    const backBg = this.add.rectangle(leftX, backY, 150, 42, 0xf4f4f4)
+    const backY = height / 2 + panelHeight / 2 - 40 * ui;
+    const backBg = this.add.rectangle(leftX, backY, 150 * ui, 42 * ui, 0xf4f4f4)
       .setOrigin(0, 0.5)
       .setStrokeStyle(1, 0xcccccc);
     this.add.text(backBg.x + backBg.width / 2, backY, 'Nazaj', {
       fontFamily: 'Arial',
-      fontSize: '18px',
+      fontSize: `${Math.round(18 * ui)}px`,
       color: '#333333',
     }).setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
@@ -226,11 +228,11 @@ export default class ProfileScene extends Phaser.Scene {
     // ---- izbor avatarja: spodaj, centriran ----
     this.add.text(
       width / 2,
-      height / 2 + panelHeight / 2 - 150,
+      height / 2 + panelHeight / 2 - 150 * ui,
       'Izberi avatar:',
       {
         fontFamily: 'Arial',
-        fontSize: '18px',
+        fontSize: `${Math.round(18 * ui)}px`,
         color: '#333333',
         fontStyle: 'bold'
       }
@@ -242,9 +244,9 @@ export default class ProfileScene extends Phaser.Scene {
       'avatar11','avatar12','avatar13','avatar14'
     ];
 
-    const gridCenterY = height / 2 + panelHeight / 2 - 70;
-    const spacingX = 60;
-    const spacingY = 60;
+    const gridCenterY = height / 2 + panelHeight / 2 - 70 * ui;
+    const spacingX = 60 * ui;
+    const spacingY = 60 * ui;
     const cols = 7;
 
     const totalWidth = (cols - 1) * spacingX;
@@ -259,9 +261,9 @@ export default class ProfileScene extends Phaser.Scene {
       const x = gridStartX + col * spacingX;
       const y = gridCenterY + (row - 0.5) * spacingY; // malo gor/dol
 
-      const circleBg = this.add.circle(x, y, 24, 0xeeeeee)
+      const circleBg = this.add.circle(x, y, 24 * ui, 0xeeeeee)
         .setStrokeStyle(1, 0xcccccc);
-      const img = this.add.image(x, y, key).setDisplaySize(40, 40);
+      const img = this.add.image(x, y, key).setDisplaySize(40 * ui, 40 * ui);
 
       avatarCircles[key] = circleBg;
 
@@ -309,6 +311,8 @@ export default class ProfileScene extends Phaser.Scene {
           }
         });
     });
+
+    attachResize(this, () => this.scene.restart());
   }
 
   // ---- modal za spremembo gesla z "password" inputi ----

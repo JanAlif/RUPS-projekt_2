@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 export default class LabScene extends Phaser.Scene {
   constructor() {
@@ -21,6 +22,7 @@ export default class LabScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.cameras.main;
+    const ui = getUiScale(this.scale);
     
     // ozadje laboratorija
     this.add.rectangle(0, 0, width, height, 0xf0f0f0).setOrigin(0);
@@ -33,9 +35,9 @@ export default class LabScene extends Phaser.Scene {
     
     // miza
     const tableX = width / 2;
-    const tableY = height / 2 + 50;
-    const tableWidth = 500;
-    const tableHeight = 250;
+    const tableY = height / 2 + 50 * ui;
+    const tableWidth = Math.min(520 * ui, width - 100);
+    const tableHeight = Math.min(260 * ui, height * 0.5);
     
     // miza (del, ki se klikne)
     const tableTop = this.add.rectangle(tableX, tableY, tableWidth, 30, 0x8b4513).setOrigin(0.5);
@@ -46,7 +48,7 @@ export default class LabScene extends Phaser.Scene {
     // mreža
     const gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x8b7355, 0.3);
-    const gridSize = 30;
+    const gridSize = 30 * ui;
     const gridStartX = tableX - (tableWidth - 30) / 2;
     const gridStartY = tableY + 15;
     const gridEndX = tableX + (tableWidth - 30) / 2;
@@ -67,7 +69,7 @@ export default class LabScene extends Phaser.Scene {
     
     // nogice mize
     const legWidth = 20;
-    const legHeight = 150;
+    const legHeight = 150 * ui;
     this.add.rectangle(tableX - tableWidth/2 + 40, tableY + tableHeight/2 + 20, legWidth, legHeight, 0x654321);
     this.add.rectangle(tableX + tableWidth/2 - 40, tableY + tableHeight/2 + 20, legWidth, legHeight, 0x654321);
     
@@ -75,8 +77,8 @@ export default class LabScene extends Phaser.Scene {
     const interactiveZone = this.add.zone(tableX, tableY + tableHeight/2, tableWidth, tableHeight)
       .setInteractive({ useHandCursor: true });
     
-    const instruction = this.add.text(tableX, tableY - 80, 'Klikni na mizo in začni graditi svoj električni krog!', {
-      fontSize: '24px',
+    const instruction = this.add.text(tableX, tableY - 80 * ui, 'Klikni na mizo in začni graditi svoj električni krog!', {
+      fontSize: `${Math.round(24 * ui)}px`,
       color: '#333',
       fontStyle: 'bold',
       backgroundColor: '#ffffff',
@@ -114,8 +116,8 @@ export default class LabScene extends Phaser.Scene {
     // avvatar
     const avatarX = 230;
     const avatarY = 55;
-    const avatarRadius = 30;
-    const borderThickness = 4;
+    const avatarRadius = 30 * ui;
+    const borderThickness = 4 * ui;
 
     // zunanji siv krog (rob)
     const borderCircle = this.add.circle(avatarX, avatarY, avatarRadius + borderThickness, 0xcccccc);
@@ -133,7 +135,7 @@ export default class LabScene extends Phaser.Scene {
 
     // pozdravno besedilo
     this.add.text(avatarX + 60, avatarY - 10, `Dobrodošel v laboratoriju, uporabnik ${username}!`, {
-        fontSize: '22px',
+        fontSize: `${Math.round(22 * ui)}px`,
         color: '#222',
         fontStyle: 'bold'
     });
@@ -141,7 +143,7 @@ export default class LabScene extends Phaser.Scene {
 
     const logoutButton = this.add.text(40, 30, '↩ Odjavi se', {
         fontFamily: 'Arial',
-        fontSize: '20px',
+        fontSize: `${Math.round(20 * ui)}px`,
         color: '#0066ff',
         padding: { x: 20, y: 10 }
     })
@@ -156,9 +158,9 @@ export default class LabScene extends Phaser.Scene {
           this.scene.start('MenuScene');
       });
 
-    const buttonWidth = 180;
-    const buttonHeight = 45;
-    const cornerRadius = 10;
+    const buttonWidth = 180 * ui;
+    const buttonHeight = 45 * ui;
+    const cornerRadius = 10 * ui;
     const rightMargin = 60;
     const topMargin = 40;
 
@@ -169,7 +171,7 @@ export default class LabScene extends Phaser.Scene {
 
     const scoreButton = this.add.text(width - buttonWidth / 2 - rightMargin, topMargin + buttonHeight / 2, 'Lestvica', {
         fontFamily: 'Arial',
-        fontSize: '20px',
+        fontSize: `${Math.round(20 * ui)}px`,
         color: '#ffffff'
     })
         .setOrigin(0.5)
@@ -185,7 +187,10 @@ export default class LabScene extends Phaser.Scene {
             scoreButtonBg.fillRoundedRect(width - buttonWidth - rightMargin, topMargin, buttonWidth, buttonHeight, cornerRadius);
         })
         .on('pointerdown', () => {
-            this.scene.start('ScoreboardScene', {cameFromMenu: true});
+            this.scene.start('ScoreboardScene', {
+              cameFromMenu: true,
+              previousScene: 'LabScene',
+            });
         });
 
     // this.input.keyboard.on('keydown-ESC', () => {
@@ -201,7 +206,7 @@ export default class LabScene extends Phaser.Scene {
 
    const profileButton = this.add.text(profileX + buttonWidth / 2, topMargin + buttonHeight / 2, 'Profil', {
      fontFamily: 'Arial',
-     fontSize: '20px',
+     fontSize: `${Math.round(20 * ui)}px`,
      color: '#ffffff'
    })
      .setOrigin(0.5)
@@ -221,5 +226,7 @@ export default class LabScene extends Phaser.Scene {
      });
 
    console.log(JSON.parse(localStorage.getItem('users')));
+
+   attachResize(this, () => this.scene.restart());
  }
 }

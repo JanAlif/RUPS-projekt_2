@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 export default class LoginScene extends Phaser.Scene {
     constructor() {
@@ -14,30 +15,32 @@ export default class LoginScene extends Phaser.Scene {
         // });
 
         const { width, height } = this.scale;
+        const ui = getUiScale(this.scale);
 
         // --- 1️⃣ Ozadje laboratorija (enako kot v LabScene) ---
         // svetla stena
-        this.add.rectangle(0, 0, width, height - 150, 0xe8e8e8).setOrigin(0);
+        const floorHeight = Math.max(120 * ui, Math.min(160, height * 0.24));
+        this.add.rectangle(0, 0, width, height - floorHeight, 0xe8e8e8).setOrigin(0);
         // tla
-        this.add.rectangle(0, height - 150, width, 150, 0xd4c4a8).setOrigin(0);
+        this.add.rectangle(0, height - floorHeight, width, floorHeight, 0xd4c4a8).setOrigin(0);
 
         // miza
         const tableX = width / 2;
-        const tableY = height / 2 + 50;
-        const tableWidth = 500;
-        const tableHeight = 250;
+        const tableY = height / 2 + 50 * ui;
+        const tableWidth = Math.min(520 * ui, width - 120);
+        const tableHeight = Math.min(260 * ui, height * 0.48);
 
         // zgornja ploskev mize
         this.add.rectangle(tableX, tableY, tableWidth, 30, 0x8b4513).setOrigin(0.5);
         // površina mize z mrežo
-        const surface = this.add.rectangle(tableX, tableY + 15, tableWidth - 30, tableHeight - 30, 0xa0826d).setOrigin(0.5, 0);
+        const surface = this.add.rectangle(tableX, tableY + 15, tableWidth - 30 * ui, tableHeight - 30 * ui, 0xa0826d).setOrigin(0.5, 0);
         const grid = this.add.graphics();
         grid.lineStyle(1, 0x8b7355, 0.3);
-        const gridSize = 30;
-        const gridStartX = tableX - (tableWidth - 30) / 2;
+        const gridSize = 30 * ui;
+        const gridStartX = tableX - (tableWidth - 30 * ui) / 2;
         const gridStartY = tableY + 15;
-        const gridEndX = tableX + (tableWidth - 30) / 2;
-        const gridEndY = tableY + 15 + (tableHeight - 30);
+        const gridEndX = tableX + (tableWidth - 30 * ui) / 2;
+        const gridEndY = tableY + 15 + (tableHeight - 30 * ui);
 
         for (let x = gridStartX; x <= gridEndX; x += gridSize) {
             grid.beginPath();
@@ -54,15 +57,15 @@ export default class LoginScene extends Phaser.Scene {
 
         // nogice mize
         const legWidth = 20;
-        const legHeight = 150;
+        const legHeight = 150 * ui;
         this.add.rectangle(tableX - tableWidth / 2 + 40, tableY + tableHeight / 2 + 20, legWidth, legHeight, 0x654321);
         this.add.rectangle(tableX + tableWidth / 2 - 40, tableY + tableHeight / 2 + 20, legWidth, legHeight, 0x654321);
 
         // okvir
-        const panelWidth = 500;
-        const panelHeight = 340;
+        const panelWidth = Math.min(520 * ui, width - 100);
+        const panelHeight = Math.min(360 * ui, height - floorHeight - 80);
         const panelX = width / 2 - panelWidth / 2;
-        const panelY = height / 2 - panelHeight / 2 - 30;
+        const panelY = Math.max(40, height / 2 - panelHeight / 2 - 30 * ui);
 
         const panel = this.add.graphics();
         panel.fillStyle(0xffffff, 0.92);
@@ -71,16 +74,16 @@ export default class LoginScene extends Phaser.Scene {
         panel.strokeRoundedRect(panelX, panelY, panelWidth, panelHeight, 25);
 
         // naslov
-        this.add.text(width / 2, panelY + 40, 'PRIJAVA', {
+        this.add.text(width / 2, panelY + 40 * ui, 'PRIJAVA', {
             fontFamily: 'Arial',
-            fontSize: '36px',
+            fontSize: `${Math.round(32 * ui)}px`,
             fontStyle: 'bold',
             color: '#222'
         }).setOrigin(0.5);
 
         // input polji
-        const inputWidth = 350;
-        const inputHeight = 45;
+        const inputWidth = Math.min(360 * ui, width - 140);
+        const inputHeight = 45 * ui;
         const corner = 10;
 
         const username = document.createElement('input');
@@ -96,7 +99,7 @@ export default class LoginScene extends Phaser.Scene {
         username.style.padding = '5px';
         username.style.border = '1px solid #ccc';
         username.style.textAlign = 'center';
-        username.style.fontSize = '18px';
+        username.style.fontSize = `${Math.round(18 * ui)}px`;
         username.style.outline = 'none';
         username.style.backgroundColor = '#f9f9f9';
         document.body.appendChild(username);
@@ -114,7 +117,7 @@ export default class LoginScene extends Phaser.Scene {
         password.style.padding = '5px';
         password.style.border = '1px solid #ccc';
         password.style.textAlign = 'center';
-        password.style.fontSize = '18px';
+        password.style.fontSize = `${Math.round(18 * ui)}px`;
         password.style.outline = 'none';
         password.style.backgroundColor = '#f9f9f9';
         document.body.appendChild(password);
@@ -130,10 +133,10 @@ export default class LoginScene extends Phaser.Scene {
 
         //console.log(profilePic);
 
-        const buttonWidth = 180;  
-        const buttonHeight = 45;  
-        const cornerRadius = 10;  
-        const buttonY = panelY + 270;
+        const buttonWidth = 180 * ui;  
+        const buttonHeight = 45 * ui;  
+        const cornerRadius = 10 * ui;  
+        const buttonY = panelY + 270 * ui;
         const rectX = width / 2;
 
         const loginButtonBg = this.add.graphics();
@@ -148,7 +151,7 @@ export default class LoginScene extends Phaser.Scene {
 
         const loginButton = this.add.text(rectX, buttonY, '▶ Prijavi se', {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: `${Math.round(22 * ui)}px`,
             color: '#ffffff'
         })
             .setOrigin(0.5)
@@ -224,11 +227,11 @@ export default class LoginScene extends Phaser.Scene {
             password.remove();
         });
 
-        const registerTextY = buttonY + 60;
+        const registerTextY = buttonY + 60 * ui;
 
         const registerButton = this.add.text(rectX, registerTextY, '📝 Ustvari nov račun', {
             fontFamily: 'Arial',
-            fontSize: '18px',
+            fontSize: `${Math.round(18 * ui)}px`,
             color: '#0066ff'
         })
             .setOrigin(0.5)
@@ -243,7 +246,7 @@ export default class LoginScene extends Phaser.Scene {
 
         const backButton = this.add.text(40, 30, '↩ Nazaj v meni', {
             fontFamily: 'Arial',
-            fontSize: '20px',
+            fontSize: `${Math.round(20 * ui)}px`,
             color: '#0066ff',
             // backgroundColor: '#e1e9ff',
             padding: { x: 20, y: 10 }
@@ -263,5 +266,11 @@ export default class LoginScene extends Phaser.Scene {
         // this.input.keyboard.on('keydown-ESC', () => {
         //     this.scene.start('MenuScene');
         // });
+
+        attachResize(this, () => {
+            username.remove();
+            password.remove();
+            this.scene.restart();
+        });
     }
 }

@@ -4,6 +4,7 @@ import { Battery } from '../components/battery.js';
 import { Component } from '../components/component.js';
 import { Node } from '../logic/node.js';
 import { Wire } from '../components/wire.js';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 export default class TestScene extends Phaser.Scene {
     constructor() {
@@ -11,6 +12,8 @@ export default class TestScene extends Phaser.Scene {
     }
     
     create() {
+        const { width, height } = this.scale;
+        const ui = getUiScale(this.scale);
 
         const graph = new CircuitGraph();
 
@@ -43,14 +46,16 @@ export default class TestScene extends Phaser.Scene {
 
         console.log(graph.isConnected(battery.nodes[0], battery.nodes[1])); // true
 
-        this.add.text(300, 250, 'Dobrodošel v laboratoriju!', {
+        this.add.text(width / 2, height / 2, 'Dobrodošel v laboratoriju!', {
             fontFamily: 'Arial',
-            fontSize: '24px',
+            fontSize: `${Math.round(24 * ui)}px`,
             color: '#222'
-        });
+        }).setOrigin(0.5);
 
         this.input.keyboard.on('keydown-ESC', () => {
             this.scene.start('MenuScene');
         });
+
+        attachResize(this, () => this.scene.restart());
     }
 }
