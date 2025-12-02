@@ -18,7 +18,7 @@ const challengeSchema = new mongoose.Schema(
     },
     difficulty: {
       type: String,
-      enum: ["easy", "medium", "hard"],
+      enum: ["demo", "easy", "medium", "hard"],
       default: "easy",
     },
     pointsMultiplier: {

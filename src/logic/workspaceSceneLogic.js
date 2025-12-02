@@ -66,7 +66,7 @@ export function loadChallengesFromApi(scene) {
 
 function getComponentDetails(type) {
   const details = {
-    baterija: 'Napetost: 3.3 V\nVir električne energije',
+    baterija: 'Baterija je vir napetosti\n\nNapetost: 3.3 V\n+ pol (rdeč) = pozitivni pol\n− pol (moder) = negativni pol\n\nPriklopi žico na + in − pol za sklenitev vezja',
     upor: 'Uporabnost: omejuje tok\nMeri se v ohmih (Ω)',
     svetilka: 'Pretvarja električno energijo v svetlobo',
     'stikalo-on': 'Dovoljuje pretok toka',
@@ -176,6 +176,28 @@ export function createComponent(scene, x, y, type, color) {
         .setOrigin(0.5)
         .setDisplaySize(130, 130);
       component.add(componentImage);
+      
+      // Add + and - pole labels for clarity
+      const plusLabel = scene.add
+        .text(-25, -15, '+', {
+          fontSize: '24px',
+          color: '#ff0000',
+          fontStyle: 'bold',
+          padding: { x: 4, y: 2 },
+        })
+        .setOrigin(0.5);
+      const minusLabel = scene.add
+        .text(25, -15, '−', {
+          fontSize: '24px',
+          color: '#0000ff',
+          fontStyle: 'bold',
+          padding: { x: 4, y: 2 },
+        })
+        .setOrigin(0.5);
+      component.add([plusLabel, minusLabel]);
+      component.setData('plusLabel', plusLabel);
+      component.setData('minusLabel', minusLabel);
+      
       component.setData('logicComponent', comp);
       break;
 
@@ -299,7 +321,19 @@ export function createComponent(scene, x, y, type, color) {
     if (component.getData('isInPanel')) {
       const details = getComponentDetails(type);
       scene.infoText.setText(details);
-      scene.infoWindow.x = x + 120;
+      
+      // Calculate dynamic box size based on text
+      const textBounds = scene.infoText.getBounds();
+      const padding = 20;
+      const boxWidth = Math.max(textBounds.width + padding * 2, 200);
+      const boxHeight = Math.max(textBounds.height + padding * 2, 60);
+      
+      // Update box size
+      scene.infoBox.setSize(boxWidth, boxHeight);
+      scene.infoBox.setDisplaySize(boxWidth, boxHeight);
+      
+      // Position to the right of component with larger offset
+      scene.infoWindow.x = x + boxWidth / 2 + 90;
       scene.infoWindow.y = y;
       scene.infoWindow.setVisible(true);
     }
@@ -370,6 +404,12 @@ export function createComponent(scene, x, y, type, color) {
       component.setData('isRotated', false);
       component.setData('isInPanel', false);
 
+      // Show first-time battery tutorial
+      if (type === 'baterija' && !localStorage.getItem('batteryTutorialShown')) {
+        showBatteryTutorial(scene);
+        localStorage.setItem('batteryTutorialShown', 'true');
+      }
+
       // ponovno ustvarimo "template" v panelu
       createComponent(
         scene,
@@ -421,6 +461,63 @@ export function createComponent(scene, x, y, type, color) {
   }
 });
   });
+}
+
+/**
+ * Show battery tutorial for first-time users
+ */
+function showBatteryTutorial(scene) {
+  const { width, height } = scene.cameras.main;
+
+  const tutorialBack = scene.add
+    .rectangle(width / 2, height / 2, 500, 200, 0x1e40af, 0.95)
+    .setOrigin(0.5)
+    .setDepth(1000)
+    .setStrokeStyle(3, 0xffffff, 1);
+
+  const tutorialTitle = scene.add
+    .text(width / 2, height / 2 - 60, '💡 Navodilo: Baterija', {
+      fontSize: '22px',
+      color: '#ffffff',
+      fontStyle: 'bold',
+      align: 'center',
+    })
+    .setOrigin(0.5)
+    .setDepth(1001);
+
+  const tutorialText = scene.add
+    .text(
+      width / 2,
+      height / 2 - 10,
+      'Baterija je vir napetosti.\n\nPriklopi žico na + (rdeč) in − (moder) pol,\nda zaključiš vezje in ustvariš električni tok.',
+      {
+        fontSize: '16px',
+        color: '#ffffff',
+        align: 'center',
+        wordWrap: { width: 450 },
+      }
+    )
+    .setOrigin(0.5)
+    .setDepth(1001);
+
+  const closeButton = scene.add
+    .text(width / 2, height / 2 + 70, 'Razumem', {
+      fontSize: '18px',
+      color: '#1e40af',
+      backgroundColor: '#ffffff',
+      padding: { x: 24, y: 10 },
+    })
+    .setOrigin(0.5)
+    .setDepth(1001)
+    .setInteractive({ useHandCursor: true })
+    .on('pointerover', () => closeButton.setStyle({ backgroundColor: '#e5e7eb' }))
+    .on('pointerout', () => closeButton.setStyle({ backgroundColor: '#ffffff' }))
+    .on('pointerdown', () => {
+      tutorialBack.destroy();
+      tutorialTitle.destroy();
+      tutorialText.destroy();
+      closeButton.destroy();
+    });
 }
 
 /**

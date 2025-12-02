@@ -98,18 +98,18 @@ export default class WorkspaceScene extends Phaser.Scene {
     this.infoWindow.setDepth(1000);
     this.infoWindow.setVisible(false);
 
-    const infoBox = this.add.rectangle(0, 0, 220, 90, 0x0f172a, 0.92);
-    infoBox.setStrokeStyle(2, 0x4b5563, 0.7);
+    this.infoBox = this.add.rectangle(0, 0, 320, 180, 0x0f172a, 0.92);
+    this.infoBox.setStrokeStyle(2, 0x4b5563, 0.7);
     const infoText = this.add
       .text(0, 0, '', {
         fontSize: `${Math.round(14 * ui)}px`,
         color: '#ffffff',
         align: 'left',
-        wordWrap: { width: 180 },
+        wordWrap: { width: 280 },
       })
       .setOrigin(0.5);
 
-    this.infoWindow.add([infoBox, infoText]);
+    this.infoWindow.add([this.infoBox, infoText]);
     this.infoText = infoText;
 
     // text za izzive + feedback
@@ -211,7 +211,7 @@ export default class WorkspaceScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // komponente v stranski vrstici (kličeš logični helper)
-    const componentStartY = 100 * ui;
+    const componentStartY = 120 * ui;
     const componentGap = 80 * ui;
     createComponent(this, panelWidth / 2, componentStartY, 'baterija', 0xffcc00);
     createComponent(this, panelWidth / 2, componentStartY + componentGap, 'upor', 0xff6600);
