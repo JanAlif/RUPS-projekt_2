@@ -21,6 +21,8 @@ export default class WorkspaceScene extends Phaser.Scene {
 
   init() {
     this.currentChallengeIndex = 0;
+    this.dragMode = true; // true = drag-and-drop, false = click-to-place
+    this.activeComponentType = null; // stores the component type in click mode
   }
 
   preload() {
@@ -221,6 +223,34 @@ export default class WorkspaceScene extends Phaser.Scene {
     createComponent(this, panelWidth / 2, componentStartY + componentGap * 5, 'žica', 0x0066cc);
     createComponent(this, panelWidth / 2, componentStartY + componentGap * 6, 'ampermeter', 0x00cc66);
     createComponent(this, panelWidth / 2, componentStartY + componentGap * 7, 'voltmeter', 0x00cc66);
+
+    // Toggle button for drag mode
+    const toggleButtonY = height - 100;
+    const toggleButton = this.add
+      .text(panelWidth / 2, toggleButtonY, '🖱️ Drag Mode', {
+        fontSize: `${Math.round(16 * ui)}px`,
+        color: '#ffffff',
+        backgroundColor: '#2563eb',
+        padding: { x: 12, y: 8 },
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => {
+        this.dragMode = !this.dragMode;
+        if (this.dragMode) {
+          toggleButton.setText('🖱️ Drag Mode');
+          toggleButton.setStyle({ backgroundColor: '#2563eb' });
+          this.activeComponentType = null;
+          if (this.selectedComponentIndicator) {
+            this.selectedComponentIndicator.destroy();
+            this.selectedComponentIndicator = null;
+          }
+        } else {
+          toggleButton.setText('👆 Click Mode');
+          toggleButton.setStyle({ backgroundColor: '#16a34a' });
+        }
+      });
 
     // back button
 

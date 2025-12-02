@@ -31,6 +31,29 @@ export function initWorkspaceLogic(scene) {
   scene.challenges = [];
   scene.sim = undefined;
   scene.sessionPoints = 0;
+  
+  // Add click handler for workspace (for click-to-place mode)
+  scene.input.on('pointerdown', (pointer) => {
+    // Only place on left-click
+    if (pointer.button !== 0) return;
+    // Don't place if context menu is open or was just opened
+    if (scene.contextMenu || scene.contextMenuJustOpened) return;
+    if (!scene.dragMode && scene.activeComponentType && pointer.x > 200) {
+      // Place component at clicked location
+      const snapped = snapToGrid(scene, pointer.x, pointer.y);
+      placeComponentAtPosition(scene, snapped.x, snapped.y, scene.activeComponentType.type, scene.activeComponentType.color);
+    }
+  });
+  
+  // Prevent browser context menu globally (only once)
+  if (!scene.contextMenuPrevented) {
+    const canvas = scene.game.canvas;
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      return false;
+    });
+    scene.contextMenuPrevented = true;
+  }
 }
 
 /**
@@ -86,6 +109,339 @@ function snapToGrid(scene, x, y) {
   const snappedY = Math.round(y / gridSize) * gridSize;
 
   return { x: snappedX, y: snappedY };
+}
+
+function placeComponentAtPosition(scene, x, y, type, color) {
+  // Create a new component at the specified position
+  const newComponent = scene.add.container(x, y);
+  
+  let comp = null;
+  let componentImage;
+  let id;
+  
+  // Reuse the same component creation logic
+  switch (type) {
+    case 'baterija':
+      id = 'bat_' + getRandomInt(1000, 9999);
+      comp = new Battery(
+        id,
+        new Node(id + '_start', -40, 0),
+        new Node(id + '_end', 40, 0),
+        3.3
+      );
+      comp.type = 'battery';
+      comp.localStart = { x: -40, y: 0 };
+      comp.localEnd = { x: 40, y: 0 };
+      // Create a container for battery image and labels to rotate together
+      const batteryContainer = scene.add.container(0, 0);
+      componentImage = scene.add.image(0, 0, 'baterija').setOrigin(0.5).setDisplaySize(130, 130);
+      const plusLabel = scene.add.text(-25, -15, '+', {
+        fontSize: '24px', color: '#ff0000', fontStyle: 'bold', padding: { x: 4, y: 2 },
+      }).setOrigin(0.5);
+      const minusLabel = scene.add.text(25, -15, '−', {
+        fontSize: '24px', color: '#0000ff', fontStyle: 'bold', padding: { x: 4, y: 2 },
+      }).setOrigin(0.5);
+      batteryContainer.add([componentImage, plusLabel, minusLabel]);
+      newComponent.add(batteryContainer);
+      newComponent.setData('rotatableContainer', batteryContainer);
+      break;
+      
+    case 'upor':
+      id = 'res_' + getRandomInt(1000, 9999);
+      comp = new Resistor(id, new Node(id + '_start', -40, 0), new Node(id + '_end', 40, 0), 1.5);
+      comp.type = 'resistor';
+      comp.localStart = { x: -40, y: 0 };
+      comp.localEnd = { x: 40, y: 0 };
+      componentImage = scene.add.image(0, 0, 'upor').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+      
+    case 'svetilka':
+      id = 'bulb_' + getRandomInt(1000, 9999);
+      comp = new Bulb(id, new Node(id + '_start', -40, 0), new Node(id + '_end', 40, 0));
+      comp.type = 'bulb';
+      comp.localStart = { x: -40, y: 0 };
+      comp.localEnd = { x: 40, y: 0 };
+      componentImage = scene.add.image(0, 0, 'svetilka').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+      
+    case 'stikalo-on':
+      id = 'switch_' + getRandomInt(1000, 9999);
+      comp = new Switch(id, new Node(id + '_start', -40, 0), new Node(id + '_end', 40, 0), true);
+      comp.type = 'switch';
+      comp.localStart = { x: -40, y: 0 };
+      comp.localEnd = { x: 40, y: 0 };
+      componentImage = scene.add.image(0, 0, 'stikalo-on').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+      
+    case 'stikalo-off':
+      id = 'switch_' + getRandomInt(1000, 9999);
+      comp = new Switch(id, new Node(id + '_start', -40, 0), new Node(id + '_end', 40, 0), false);
+      comp.type = 'switch';
+      comp.localStart = { x: -40, y: 0 };
+      comp.localEnd = { x: 40, y: 0 };
+      componentImage = scene.add.image(0, 0, 'stikalo-off').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+      
+    case 'žica':
+      id = 'wire_' + getRandomInt(1000, 9999);
+      comp = new Wire(id, new Node(id + '_start', -40, 0), new Node(id + '_end', 40, 0));
+      comp.type = 'wire';
+      comp.localStart = { x: -40, y: 0 };
+      comp.localEnd = { x: 40, y: 0 };
+      componentImage = scene.add.image(0, 0, 'žica').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+      
+    case 'ampermeter':
+      id = 'ammeter_' + getRandomInt(1000, 9999);
+      componentImage = scene.add.image(0, 0, 'ampermeter').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+      
+    case 'voltmeter':
+      id = 'voltmeter_' + getRandomInt(1000, 9999);
+      componentImage = scene.add.image(0, 0, 'voltmeter').setOrigin(0.5).setDisplaySize(100, 100);
+      newComponent.add(componentImage);
+      break;
+  }
+  
+  // Add label text
+  const label = scene.add.text(0, 30, type, {
+    fontSize: '11px',
+    color: '#fff',
+    backgroundColor: '#00000088',
+    padding: { x: 4, y: 2 },
+  }).setOrigin(0.5);
+  newComponent.add(label);
+  
+  newComponent.setSize(70, 70);
+  newComponent.setInteractive({ draggable: true, useHandCursor: true });
+  newComponent.setData('type', type);
+  newComponent.setData('color', color);
+  newComponent.setData('isInPanel', false);
+  newComponent.setData('rotation', 0);
+  newComponent.setData('logicComponent', comp);
+  newComponent.setData('isDragging', false);
+  newComponent.setData('wasDragged', false);
+  newComponent.setData('componentImage', componentImage);
+  
+  if (comp) {
+    scene.graph.addComponent(comp);
+    if (comp.start) scene.graph.addNode(comp.start);
+    if (comp.end) scene.graph.addNode(comp.end);
+  }
+  
+  updateLogicNodePositions(scene, newComponent);
+  scene.placedComponents.push(newComponent);
+  
+  // Add context menu on right-click
+  addContextMenu(scene, newComponent, componentImage);
+  
+  // Add drag handlers
+  scene.input.setDraggable(newComponent);
+  newComponent.on('dragstart', () => newComponent.setData('isDragging', true));
+  newComponent.on('drag', (pointer, dragX, dragY) => {
+    newComponent.x = dragX;
+    newComponent.y = dragY;
+    newComponent.setData('wasDragged', true);
+  });
+  newComponent.on('dragend', () => {
+    const snapped = snapToGrid(scene, newComponent.x, newComponent.y);
+    newComponent.x = snapped.x;
+    newComponent.y = snapped.y;
+    updateLogicNodePositions(scene, newComponent);
+    newComponent.setData('isDragging', false);
+  });
+  
+  // Add rotation on left-click in drag mode
+  newComponent.on('pointerup', (pointer) => {
+    if (newComponent.getData('wasDragged')) {
+      newComponent.setData('wasDragged', false);
+      return;
+    }
+    // Don't rotate on right-click
+    if (pointer.button === 2) return;
+    // Don't rotate if context menu was just opened
+    if (scene.contextMenuJustOpened) return;
+    
+    // Only rotate in drag mode on left-click
+    if (scene.dragMode && pointer.button === 0) {
+      const currentRotation = newComponent.getData('rotation') || 0;
+      const logicalRotation = (currentRotation + 90) % 360;
+      newComponent.setData('rotation', logicalRotation);
+      updateLogicNodePositions(scene, newComponent);
+      
+      // Rotate the container if it exists (battery), otherwise rotate the image
+      const rotatableContainer = newComponent.getData('rotatableContainer');
+      const storedImage = newComponent.getData('componentImage');
+      console.log('Rotating - container:', rotatableContainer, 'image:', storedImage);
+      const targetToRotate = rotatableContainer ? rotatableContainer : storedImage;
+      
+      if (targetToRotate) {
+        const targetAngle = targetToRotate.angle + 90;
+        scene.tweens.add({
+          targets: targetToRotate,
+          angle: targetAngle,
+          duration: 150,
+          ease: 'Cubic.easeOut',
+        });
+      }
+    }
+  });
+  
+  return newComponent;
+}
+
+function addContextMenu(scene, component, componentImage) {
+  // Use rightclick event for better reliability
+  component.on('pointerdown', (pointer) => {
+    if (pointer.rightButtonDown()) {
+      showContextMenu(scene, component, componentImage, pointer.x, pointer.y);
+    }
+  });
+}
+
+function showContextMenu(scene, component, componentImage, x, y) {
+  // Remove existing context menu if any
+  if (scene.contextMenu) {
+    scene.contextMenu.destroy();
+    scene.contextMenu = null;
+  }
+  
+  const menuWidth = 120;
+  const menuHeight = 110;
+  const offsetX = 60; // Offset to the right of component
+  const offsetY = 50; // Offset down from component
+  const menu = scene.add.container(x + offsetX, y + offsetY);
+  menu.setDepth(2000);
+  
+  const bg = scene.add.rectangle(0, 0, menuWidth, menuHeight, 0x1e293b, 0.95);
+  bg.setStrokeStyle(2, 0x475569);
+  menu.add(bg);
+  
+  const options = [
+    { text: '↻ Rotate', action: () => rotateComponent(scene, component, componentImage) },
+    { text: '🗑️ Delete', action: () => deleteComponent(scene, component) },
+    { text: '📋 Duplicate', action: () => duplicateComponent(scene, component) },
+  ];
+  
+  options.forEach((option, i) => {
+    const optionY = -35 + i * 35;
+    const optionText = scene.add.text(0, optionY, option.text, {
+      fontSize: '14px',
+      color: '#ffffff',
+      padding: { x: 8, y: 6 },
+    }).setOrigin(0.5);
+    
+    const hitArea = scene.add.rectangle(0, optionY, menuWidth, 30, 0x000000, 0.01);
+    hitArea.setInteractive({ useHandCursor: true })
+      .on('pointerover', () => optionText.setStyle({ backgroundColor: '#334155' }))
+      .on('pointerout', () => optionText.setStyle({ backgroundColor: '' }))
+      .on('pointerdown', (pointer) => {
+        if (pointer.event) {
+          pointer.event.stopPropagation();
+        }
+        // Set flag to prevent workspace click handler and rotation
+        scene.contextMenuJustOpened = true;
+        // Execute action immediately
+        option.action();
+        // Clean up menu
+        if (scene.contextMenu) {
+          scene.contextMenu.destroy();
+          scene.contextMenu = null;
+        }
+        // Keep flag active longer to prevent component placement and rotation on pointerup
+        setTimeout(() => {
+          scene.contextMenuJustOpened = false;
+        }, 300);
+      });
+    
+    menu.add([hitArea, optionText]);
+  });
+  
+  scene.contextMenu = menu;
+  scene.contextMenuJustOpened = true;
+  
+  // Clear the flag after a short delay
+  setTimeout(() => {
+    scene.contextMenuJustOpened = false;
+  }, 300);
+  
+  // Close menu on any click outside the menu
+  const closeHandler = (pointer) => {
+    // Small delay to allow menu clicks to register first
+    setTimeout(() => {
+      if (scene.contextMenu) {
+        scene.contextMenu.destroy();
+        scene.contextMenu = null;
+      }
+    }, 50);
+  };
+  
+  // Wait a bit before adding the close handler to prevent immediate closing
+  setTimeout(() => {
+    scene.input.once('pointerdown', closeHandler);
+  }, 100);
+}
+
+function rotateComponent(scene, component, componentImage) {
+  const currentRotation = component.getData('rotation') || 0;
+  const logicalRotation = (currentRotation + 90) % 360;
+  component.setData('rotation', logicalRotation);
+  updateLogicNodePositions(scene, component);
+  
+  // Rotate the container if it exists (battery), otherwise rotate the image
+  const rotatableContainer = component.getData('rotatableContainer');
+  const storedImage = component.getData('componentImage');
+  const targetToRotate = rotatableContainer ? rotatableContainer : (storedImage || componentImage);
+  
+  if (targetToRotate) {
+    const targetAngle = targetToRotate.angle + 90;
+    scene.tweens.add({
+      targets: targetToRotate,
+      angle: targetAngle,
+      duration: 150,
+      ease: 'Cubic.easeOut',
+    });
+  }
+}
+
+function deleteComponent(scene, component) {
+  const comp = component.getData('logicComponent');
+  if (comp) {
+    // Remove from graph components list
+    const compIndex = scene.graph.components.indexOf(comp);
+    if (compIndex > -1) {
+      scene.graph.components.splice(compIndex, 1);
+    }
+    // Remove nodes from graph (nodes is a Map)
+    if (comp.start && comp.start.id) {
+      scene.graph.nodes.delete(comp.start.id);
+    }
+    if (comp.end && comp.end.id) {
+      scene.graph.nodes.delete(comp.end.id);
+    }
+  }
+  
+  const index = scene.placedComponents.indexOf(component);
+  if (index > -1) {
+    scene.placedComponents.splice(index, 1);
+  }
+  
+  component.destroy();
+}
+
+function duplicateComponent(scene, component) {
+  const type = component.getData('type');
+  const color = component.getData('color');
+  const offsetX = 80;
+  const offsetY = 80;
+  
+  placeComponentAtPosition(scene, component.x + offsetX, component.y + offsetY, type, color);
 }
 
 function getRandomInt(min, max) {
@@ -171,13 +527,12 @@ export function createComponent(scene, x, y, type, color) {
       comp.type = 'battery';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
+      // Create a container for battery image and labels to rotate together
+      const batteryContainer = scene.add.container(0, 0);
       componentImage = scene.add
         .image(0, 0, 'baterija')
         .setOrigin(0.5)
         .setDisplaySize(130, 130);
-      component.add(componentImage);
-      
-      // Add + and - pole labels for clarity
       const plusLabel = scene.add
         .text(-25, -15, '+', {
           fontSize: '24px',
@@ -194,9 +549,9 @@ export function createComponent(scene, x, y, type, color) {
           padding: { x: 4, y: 2 },
         })
         .setOrigin(0.5);
-      component.add([plusLabel, minusLabel]);
-      component.setData('plusLabel', plusLabel);
-      component.setData('minusLabel', minusLabel);
+      batteryContainer.add([componentImage, plusLabel, minusLabel]);
+      component.add(batteryContainer);
+      component.setData('rotatableContainer', batteryContainer);
       
       component.setData('logicComponent', comp);
       break;
@@ -369,8 +724,32 @@ export function createComponent(scene, x, y, type, color) {
   if (comp) component.setData('logicComponent', comp);
   component.setData('isDragging', false);
   component.setData('wasDragged', false);
+  component.setData('componentImage', componentImage);
 
   scene.input.setDraggable(component);
+  
+  // Add click handler for click-to-place mode
+  component.on('pointerdown', (pointer) => {
+    if (pointer.rightButtonDown()) return; // ignore right clicks
+    if (component.getData('isInPanel') && !scene.dragMode) {
+      // Clear previous selection indicator
+      if (scene.selectedComponentIndicator) {
+        scene.selectedComponentIndicator.destroy();
+      }
+      
+      // Activate this component type for placing
+      scene.activeComponentType = { type, color };
+      
+      // Add checkmark indicator on the right side
+      const indicator = scene.add.text(x + 50, y, '✓', {
+        fontSize: '32px',
+        color: '#22c55e',
+        fontStyle: 'bold',
+      }).setOrigin(0.5);
+      indicator.setDepth(999);
+      scene.selectedComponentIndicator = indicator;
+    }
+  });
 
   component.on('dragstart', () => {
     component.setData('isDragging', true);
@@ -420,6 +799,9 @@ export function createComponent(scene, x, y, type, color) {
       );
 
       scene.placedComponents.push(component);
+      
+      // Add context menu to placed component
+      addContextMenu(scene, component, componentImage);
     } else if (!component.getData('isInPanel')) {
       const snapped = snapToGrid(scene, component.x, component.y);
       component.x = snapped.x;
@@ -436,30 +818,42 @@ export function createComponent(scene, x, y, type, color) {
 
 
   component.on('pointerup', (pointer) => {
-    console.log('pointerup on component', type);
     if (component.getData('isInPanel')) return;
     if (component.getData('wasDragged')) {
       component.setData('wasDragged', false);
       return;
     }
-
-    const currentRotation = component.getData('rotation') || 0;
-    console.log('Current rotation:', currentRotation);
-    const logicalRotation = (currentRotation + 90) % 360; // for your own data
-    component.setData('rotation', logicalRotation);
-    component.setData('isRotated', !component.getData('isRotated'));
-    updateLogicNodePositions(scene, component);
-    const targetAngle = componentImage.angle + 90; // always +90 from current
-
-    scene.tweens.add({
-  targets: componentImage,
-  angle: targetAngle,
-  duration: 150,
-  ease: 'Cubic.easeOut',
-  onComplete: () => {
-    updateLogicNodePositions(scene, componentImage);
-  }
-});
+    // Don't rotate on right-click
+    if (pointer.button === 2) return;
+    // Don't rotate if context menu was just opened
+    if (scene.contextMenuJustOpened) return;
+    
+    // Only rotate in drag mode on left-click
+    if (scene.dragMode && pointer.button === 0) {
+      const currentRotation = component.getData('rotation') || 0;
+      const logicalRotation = (currentRotation + 90) % 360;
+      component.setData('rotation', logicalRotation);
+      component.setData('isRotated', !component.getData('isRotated'));
+      updateLogicNodePositions(scene, component);
+      
+      // Rotate the container if it exists (battery), otherwise rotate the image
+      const rotatableContainer = component.getData('rotatableContainer');
+      const storedImage = component.getData('componentImage');
+      const targetToRotate = rotatableContainer ? rotatableContainer : (storedImage || componentImage);
+      
+      if (targetToRotate) {
+        const targetAngle = targetToRotate.angle + 90;
+        scene.tweens.add({
+          targets: targetToRotate,
+          angle: targetAngle,
+          duration: 150,
+          ease: 'Cubic.easeOut',
+          onComplete: () => {
+            updateLogicNodePositions(scene, component);
+          }
+        });
+      }
+    }
   });
 }
 
