@@ -104,10 +104,9 @@ function updateLogicNodePositions(scene, component) {
   const localStart = comp.localStart || { x: -halfW, y: 0 };
   const localEnd = comp.localEnd || { x: halfW, y: 0 };
 
-  const theta =
-    typeof component.rotation === 'number' && component.rotation
-      ? component.rotation
-      : Phaser.Math.DegToRad(component.angle || 0);
+const theta = Phaser.Math.DegToRad(
+  component.getData('rotation') || 0
+);
 
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
@@ -265,11 +264,13 @@ export function createComponent(scene, x, y, type, color) {
       comp.type = 'wire';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
+      
       componentImage = scene.add
         .image(0, 0, 'žica')
         .setOrigin(0.5)
         .setDisplaySize(100, 100);
       component.add(componentImage);
+      
       component.setData('logicComponent', comp);
       break;
 
@@ -395,6 +396,7 @@ export function createComponent(scene, x, y, type, color) {
 
 
   component.on('pointerup', (pointer) => {
+    console.log('pointerup on component', type);
     if (component.getData('isInPanel')) return;
     if (component.getData('wasDragged')) {
       component.setData('wasDragged', false);
@@ -402,18 +404,22 @@ export function createComponent(scene, x, y, type, color) {
     }
 
     const currentRotation = component.getData('rotation') || 0;
+    console.log('Current rotation:', currentRotation);
     const logicalRotation = (currentRotation + 90) % 360; // for your own data
     component.setData('rotation', logicalRotation);
     component.setData('isRotated', !component.getData('isRotated'));
-
+    updateLogicNodePositions(scene, component);
     const targetAngle = componentImage.angle + 90; // always +90 from current
 
     scene.tweens.add({
-      targets: componentImage,
-      angle: targetAngle,
-      duration: 150,
-      ease: 'Cubic.easeOut',
-    });
+  targets: componentImage,
+  angle: targetAngle,
+  duration: 150,
+  ease: 'Cubic.easeOut',
+  onComplete: () => {
+    updateLogicNodePositions(scene, componentImage);
+  }
+});
   });
 }
 
