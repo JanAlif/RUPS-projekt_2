@@ -13,6 +13,7 @@ import WorkspaceScene from './scenes/workspaceScene';
 import RegisterScene from './scenes/RegisterScene';
 import BootScene from './scenes/BootScene';
 import ProfileScene from './scenes/profileScene';
+import ExampleScene from './scenes/examplesScene';
 
 const config = {
   type: Phaser.AUTO,            
@@ -32,7 +33,8 @@ const config = {
     LoginScene,
     ScoreboardScene,
     RegisterScene,
-    ProfileScene
+    ProfileScene,
+    ExampleScene
   ],
   physics: {
     default: 'arcade',           
