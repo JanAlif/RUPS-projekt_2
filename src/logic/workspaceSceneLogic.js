@@ -44,6 +44,7 @@ export function initWorkspaceLogic(scene) {
       placeComponentAtPosition(scene, snapped.x, snapped.y, scene.activeComponentType.type, scene.activeComponentType.color);
     }
   });
+
   
   // Prevent browser context menu globally (only once)
   if (!scene.contextMenuPrevented) {
@@ -228,6 +229,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   newComponent.setData('isDragging', false);
   newComponent.setData('wasDragged', false);
   newComponent.setData('componentImage', componentImage);
+
   
   if (comp) {
     scene.graph.addComponent(comp);
@@ -242,19 +244,14 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   addContextMenu(scene, newComponent, componentImage);
   
   // Add drag handlers
+  componentImage.setInteractive({ draggable: true, useHandCursor: true })
   scene.input.setDraggable(newComponent);
-  newComponent.on('dragstart', () => newComponent.setData('isDragging', true));
-  newComponent.on('drag', (pointer, dragX, dragY) => {
+
+   newComponent.on('drag', (pointer, dragX, dragY) => {
+    console.log('Dragging component', newComponent.getData('type'));
     newComponent.x = dragX;
     newComponent.y = dragY;
     newComponent.setData('wasDragged', true);
-  });
-  newComponent.on('dragend', () => {
-    const snapped = snapToGrid(scene, newComponent.x, newComponent.y);
-    newComponent.x = snapped.x;
-    newComponent.y = snapped.y;
-    updateLogicNodePositions(scene, newComponent);
-    newComponent.setData('isDragging', false);
   });
   
   // Add rotation on left-click in drag mode
@@ -263,10 +260,13 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       newComponent.setData('wasDragged', false);
       return;
     }
+    
     // Don't rotate on right-click
     if (pointer.button === 2) return;
     // Don't rotate if context menu was just opened
     if (scene.contextMenuJustOpened) return;
+    
+        
     
     // Only rotate in drag mode on left-click
     if (scene.dragMode && pointer.button === 0) {
@@ -295,10 +295,47 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   
   return newComponent;
 }
+function handleComponentMove(scene, newComponent) {
+
+    console.log('handling the component connections');
+
+    const compLogic = newComponent.getData('logicComponent');
+    if (!compLogic) return;
+
+    // 1) Remove existing connections
+    scene.graph.removeAllConnectionsFromComponent(compLogic);
+
+    // 2) Snap the main sprite
+    const snapped = snapToGrid(scene, newComponent.x, newComponent.y);
+    newComponent.x = snapped.x;
+    newComponent.y = snapped.y;
+
+    // 3) Update logic node positions (VERY IMPORTANT!)
+    updateLogicNodePositions(scene, newComponent);
+
+    // Get updated positions for the endpoint nodes AFTER updateLogicNodePositions
+    const start = compLogic.start;
+    const end = compLogic.end;
+
+    // 4) Add nodes FIRST
+    if (start) {
+        if (!start.connected) start.connected = new Set();
+        scene.graph.addNode(start);
+    }
+    if (end) {
+        if (!end.connected) end.connected = new Set();
+        scene.graph.addNode(end);
+    }
+
+    // 5) NOW re-add component (LAST)
+    console.log('Re-adding component to graph:', compLogic.id);
+    scene.graph.addComponent(compLogic);
+}
 
 function addContextMenu(scene, component, componentImage) {
   // Use rightclick event for better reliability
   component.on('pointerdown', (pointer) => {
+    
     if (pointer.rightButtonDown()) {
       showContextMenu(scene, component, componentImage, pointer.x, pointer.y);
     }
@@ -345,6 +382,7 @@ function showContextMenu(scene, component, componentImage, x, y) {
         if (pointer.event) {
           pointer.event.stopPropagation();
         }
+
         // Set flag to prevent workspace click handler and rotation
         scene.contextMenuJustOpened = true;
         // Execute action immediately
@@ -818,6 +856,8 @@ export function createComponent(scene, x, y, type, color) {
 
 
   component.on('pointerup', (pointer) => {
+    handleComponentMove(scene, component);
+    
     if (component.getData('isInPanel')) return;
     if (component.getData('wasDragged')) {
       component.setData('wasDragged', false);
