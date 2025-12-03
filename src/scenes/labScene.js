@@ -134,7 +134,7 @@ export default class LabScene extends Phaser.Scene {
     avatarImage.setMask(mask);
 
     // pozdravno besedilo
-    this.add.text(avatarX + 60, avatarY - 10, `Dobrodošel v laboratoriju, uporabnik ${username}!`, {
+    this.add.text(avatarX + 60, avatarY - 10, `Dobrodošel ${username}!`, {
         fontSize: `${Math.round(22 * ui)}px`,
         color: '#222',
         fontStyle: 'bold'
@@ -228,5 +228,38 @@ export default class LabScene extends Phaser.Scene {
    console.log(JSON.parse(localStorage.getItem('users')));
 
    attachResize(this, () => this.scene.restart());
+
+   // 🔹 Primeri gumb – desno od profila, levo od lestvice
+const examplesButtonBg = this.add.graphics();
+const examplesX = width - buttonWidth - rightMargin - (buttonWidth * 2) - 40; 
+
+examplesButtonBg.fillStyle(0x7c3aed, 1);
+examplesButtonBg.fillRoundedRect(examplesX, topMargin, buttonWidth, buttonHeight, cornerRadius);
+
+const examplesButton = this.add.text(
+  examplesX + buttonWidth / 2,
+  topMargin + buttonHeight / 2,
+  'Primeri',
+  {
+    fontFamily: 'Arial',
+    fontSize: `${Math.round(20 * ui)}px`,
+    color: '#ffffff',
+  }
+)
+  .setOrigin(0.5)
+  .setInteractive({ useHandCursor: true })
+  .on('pointerover', () => {
+    examplesButtonBg.clear();
+    examplesButtonBg.fillStyle(0x5b21b6, 1);
+    examplesButtonBg.fillRoundedRect(examplesX, topMargin, buttonWidth, buttonHeight, cornerRadius);
+  })
+  .on('pointerout', () => {
+    examplesButtonBg.clear();
+    examplesButtonBg.fillStyle(0x7c3aed, 1);
+    examplesButtonBg.fillRoundedRect(examplesX, topMargin, buttonWidth, buttonHeight, cornerRadius);
+  })
+  .on('pointerdown', () => {
+    this.scene.start('ExamplesScene');
+  });
  }
 }
