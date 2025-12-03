@@ -199,7 +199,7 @@ export default class WorkspaceScene extends Phaser.Scene {
     // stranska vrstica
     const panelWidth = Math.max(160 * ui, width * 0.12);
     const sidePanel = this.add.graphics();
-    sidePanel.fillStyle(0x0f172a, 0.96);
+    sidePanel.fillStyle(0xc0c0c0, 0.96);
     sidePanel.fillRoundedRect(0, 0, panelWidth, height, 0);
     sidePanel.lineStyle(2, 0x1f2937, 1);
     sidePanel.strokeRoundedRect(0, 0, panelWidth, height, 0);
