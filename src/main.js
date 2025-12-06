@@ -16,11 +16,15 @@ import ProfileScene from './scenes/profileScene';
 import ExampleScene from './scenes/examplesScene';
 
 const config = {
-  type: Phaser.AUTO,            
-  width: window.innerWidth,                    
-  height: window.innerHeight,                   
+  type: Phaser.AUTO,       
+  roundPixels: true,     
+  width: window.innerWidth,
+  height: window.innerHeight,
   backgroundColor: '#f4f6fa',    
-  parent: 'game-container',      
+  parent: 'game-container',    
+  dom: {
+        createContainer: true
+    },  
   scene: [
     // uvoz scen
     BootScene,
@@ -44,11 +48,13 @@ const config = {
     }
   },
   scale: {
-    mode: Phaser.Scale.RESIZE,      
-    autoCenter: Phaser.Scale.CENTER_BOTH
+    mode: Phaser.Scale.RESIZE,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+    resolution: window.devicePixelRatio,
   }
 };
 
 // inicializacija igre
 const game = new Phaser.Game(config);
+
 export default game;

@@ -116,7 +116,7 @@ export default class WorkspaceScene extends Phaser.Scene {
 
     // text za izzive + feedback
     this.promptText = this.add
-      .text(width / 1.8, height - 30, 'Nalagam izzive...', {
+      .text(Math.floor(width / 1.8), Math.floor(height - 30), 'Nalagam izzive...', {
         fontSize: `${Math.round(20 * ui)}px`,
         color: '#0f172a',
         fontStyle: 'bold',
@@ -130,6 +130,7 @@ export default class WorkspaceScene extends Phaser.Scene {
         fontSize: `${Math.round(18 * ui)}px`,
         color: '#cc0000',
         fontStyle: 'bold',
+        resolution: window.devicePixelRatio,
         padding: { x: 15, y: 8 },
       })
       .setOrigin(0.5);
@@ -154,7 +155,7 @@ export default class WorkspaceScene extends Phaser.Scene {
         .text(x, y, label, {
           fontFamily: 'Arial',
           fontSize: `${Math.round(20 * ui)}px`,
-          color: '#ffffff',
+          color: '#ffffffff',
         })
         .setOrigin(0.5)
         .setInteractive({ useHandCursor: true })
@@ -205,24 +206,25 @@ export default class WorkspaceScene extends Phaser.Scene {
     sidePanel.strokeRoundedRect(0, 0, panelWidth, height, 0);
 
     this.add
-      .text(panelWidth / 2, 60, 'Komponente', {
-        fontSize: `${Math.round(18 * ui)}px`,
-        color: '#e5e7eb',
+      .text(Math.floor(panelWidth / 2), 100 * ui, 'Komponente', {
+        fontSize: `${Math.round(25 * ui)}px`,
+        color: '#2d2d2eff',
         fontStyle: 'bold',
+        resolution: window.devicePixelRatio,
       })
       .setOrigin(0.5);
 
     // komponente v stranski vrstici (kličeš logični helper)
-    const componentStartY = 120 * ui;
+    const componentStartY = 180 * ui;
     const componentGap = 80 * ui;
-    createComponent(this, panelWidth / 2, componentStartY, 'baterija', 0xffcc00);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap, 'upor', 0xff6600);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 2, 'svetilka', 0xff0000);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 3, 'stikalo-on', 0x666666);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 4, 'stikalo-off', 0x666666);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 5, 'žica', 0x0066cc);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 6, 'ampermeter', 0x00cc66);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 7, 'voltmeter', 0x00cc66);
+    createComponent(this, panelWidth / 2, componentStartY, 'baterija', 0xff6600, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap, 'upor', 0xff6600, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 2, 'svetilka', 0xff0000  , ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 3, 'stikalo-on', 0x666666, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 4, 'stikalo-off', 0x666666,  ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 5, 'žica', 0x0066cc, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 6, 'ampermeter', 0x00cc66, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 7, 'voltmeter', 0x00cc66, ui);
 
     // Toggle button for drag mode
     const toggleButtonY = height - 100;
@@ -254,14 +256,15 @@ export default class WorkspaceScene extends Phaser.Scene {
 
     // back button
 
+
     const backButton = this.add
-      .text(16, 14, '↩ Meni', {
+      .text(Math.floor(panelWidth / 2 ), 40 * ui, '↩ Meni', {
         fontFamily: 'Arial',
         fontSize: `${Math.round(20 * ui)}px`,
-        color: '#8ab4ff',
-        padding: { x: 18, y: 10 },
+        color: '#2563eb',
+        resolution: window.devicePixelRatio,
       })
-      .setOrigin(0, 0)
+      .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
       .on('pointerover', () =>
         backButton.setStyle({ color: '#cde3ff' })
@@ -290,9 +293,11 @@ export default class WorkspaceScene extends Phaser.Scene {
         30,
         'Povleci komponente na mizo in zgradi svoj električni krog!',
         {
+          
           fontSize: `${Math.round(20 * ui)}px`,
           color: '#0f172a',
           fontStyle: 'bold',
+          resolution: window.devicePixelRatio ,
           align: 'center',
           backgroundColor: '#ffffffdd',
           padding: { x: 15, y: 8 },

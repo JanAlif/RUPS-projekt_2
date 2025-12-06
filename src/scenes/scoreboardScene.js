@@ -193,12 +193,17 @@ export default class ScoreboardScene extends Phaser.Scene {
     }
 
     handleResize() {
-        this.scale.off('resize', this.handleResize, this);
+    if (this._resizeTimer) {
+        clearTimeout(this._resizeTimer);
+    }
+
+    this._resizeTimer = setTimeout(() => {
         this.scene.restart({
             cameFromMenu: this.cameFromMenu,
             previousScene: this.previousScene
         });
-    }
+    }, 30);
+}
 
     loadLeaderboard(layout, loggedUsername, loadingText) {
         fetch('/api/users/leaderboard')

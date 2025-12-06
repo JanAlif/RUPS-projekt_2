@@ -1,10 +1,11 @@
 // src/logic/workspaceSceneLogic.js
-import Phaser from 'phaser';
+import Phaser, { BlendModes } from 'phaser';
 import { Battery } from '../components/battery';
 import { Bulb } from '../components/bulb';
 import { Wire } from '../components/wire';
 import { Resistor } from '../components/resistor';
 import { Switch } from '../components/switch';
+import { attachResize, getUiScale } from '../utils/uiScale';
 
 import { CircuitGraph } from './circuit_graph';
 import { Node } from './node';
@@ -135,7 +136,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.localEnd = { x: 40, y: 0 };
       // Create a container for battery image and labels to rotate together
       const batteryContainer = scene.add.container(0, 0);
-      componentImage = scene.add.image(0, 0, 'baterija').setOrigin(0.5).setDisplaySize(130, 130);
+      componentImage = scene.add.image(0, 0, 'baterija').setOrigin(0.5).setScale(0.5);
       const plusLabel = scene.add.text(-25, -15, '+', {
         fontSize: '24px', color: '#ff0000', fontStyle: 'bold', padding: { x: 4, y: 2 },
       }).setOrigin(0.5);
@@ -153,7 +154,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'resistor';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'upor').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'upor').setOrigin(0.5).setScale(0.5);
       newComponent.add(componentImage);
       break;
       
@@ -163,7 +164,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'bulb';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'svetilka').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'svetilka').setOrigin(0.5).setScale(0.5)
       newComponent.add(componentImage);
       break;
       
@@ -173,7 +174,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'switch';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'stikalo-on').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'stikalo-on').setOrigin(0.5).setScale(0.5);
       newComponent.add(componentImage);
       break;
       
@@ -183,7 +184,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'switch';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'stikalo-off').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'stikalo-off').setOrigin(0.5).setScale(0.5);
       newComponent.add(componentImage);
       break;
       
@@ -193,29 +194,30 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'wire';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'žica').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'žica').setOrigin(0.5).setScale(0.5)
       newComponent.add(componentImage);
       break;
       
     case 'ampermeter':
       id = 'ammeter_' + getRandomInt(1000, 9999);
-      componentImage = scene.add.image(0, 0, 'ampermeter').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'ampermeter').setOrigin(0.5).setScale(0.5)
       newComponent.add(componentImage);
       break;
       
     case 'voltmeter':
       id = 'voltmeter_' + getRandomInt(1000, 9999);
-      componentImage = scene.add.image(0, 0, 'voltmeter').setOrigin(0.5).setDisplaySize(100, 100);
+      componentImage = scene.add.image(0, 0, 'voltmeter').setOrigin(0.5).setScale(0.5)
       newComponent.add(componentImage);
       break;
   }
   
   // Add label text
   const label = scene.add.text(0, 30, type, {
-    fontSize: '11px',
+    fontSize: `${Math.round(18 * ui)}px`,
     color: '#fff',
     backgroundColor: '#00000088',
     padding: { x: 4, y: 2 },
+    resolution: window.devicePixelRatio,
   }).setOrigin(0.5);
   newComponent.add(label);
   
@@ -370,7 +372,6 @@ function showContextMenu(scene, component, componentImage, x, y) {
     const optionY = -35 + i * 35;
     const optionText = scene.add.text(0, optionY, option.text, {
       fontSize: '14px',
-      color: '#ffffff',
       padding: { x: 8, y: 6 },
     }).setOrigin(0.5);
     
@@ -546,9 +547,9 @@ const theta = Phaser.Math.DegToRad(
 /**
  * Ustvari eno komponento (baterija, žica, stikalo, …) v sceni.
  */
-export function createComponent(scene, x, y, type, color) {
+export function createComponent(scene, x, y, type, color, ui) {
   const component = scene.add.container(x, y);
-
+  const IMAGE_SIZE = 100 * ui;
   let comp = null;
   let componentImage;
   let id;
@@ -570,7 +571,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'baterija')
         .setOrigin(0.5)
-        .setDisplaySize(130, 130);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       const plusLabel = scene.add
         .text(-25, -15, '+', {
           fontSize: '24px',
@@ -608,7 +609,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'upor')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       component.setData('logicComponent', comp);
       break;
@@ -626,7 +627,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'svetilka')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       component.setData('logicComponent', comp);
       break;
@@ -645,7 +646,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'stikalo-on')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       component.setData('logicComponent', comp);
       break;
@@ -664,7 +665,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'stikalo-off')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       component.setData('logicComponent', comp);
       break;
@@ -683,7 +684,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'žica')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       
       component.setData('logicComponent', comp);
@@ -694,7 +695,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'ampermeter')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       component.setData('logicComponent', null);
       break;
@@ -704,7 +705,7 @@ export function createComponent(scene, x, y, type, color) {
       componentImage = scene.add
         .image(0, 0, 'voltmeter')
         .setOrigin(0.5)
-        .setDisplaySize(100, 100);
+        .setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       component.add(componentImage);
       component.setData('logicComponent', null);
       break;
@@ -740,14 +741,13 @@ export function createComponent(scene, x, y, type, color) {
     component.setScale(1);
   });
 
-  const label = scene.add
-    .text(0, 30, type, {
-      fontSize: '11px',
-      color: '#fff',
-      backgroundColor: '#00000088',
-      padding: { x: 4, y: 2 },
-    })
-    .setOrigin(0.5);
+  const label = scene.add.text(0, 40 * ui, type, {
+    fontSize: `${14 * ui}px`,
+    color: '#000000ff',
+    fontStyle: 'bold',
+    resolution: window.devicePixelRatio,
+    padding: { x: 4 * ui, y: 3 * ui },
+}).setOrigin(0.5);
   component.add(label);
 
   component.setSize(70, 70);
@@ -833,7 +833,8 @@ export function createComponent(scene, x, y, type, color) {
         component.getData('originalX'),
         component.getData('originalY'),
         component.getData('type'),
-        component.getData('color')
+        component.getData('color'),
+        ui
       );
 
       scene.placedComponents.push(component);

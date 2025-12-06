@@ -3,9 +3,8 @@ class CircuitGraph {
         this.nodes = new Map();     // id -> node
         this.components = [];       // list of components
         this.MERGE_RADIUS = 85;     // global radius used for merging/pruning/traversal
-        // For stricter traversal checks you can adjust these:
         this.TRAVERSE_RADIUS = this.MERGE_RADIUS;
-        this.MIN_TRAVERSE_DEPTH = 2; // require at least 2 component steps before accepting battery end
+        this.MIN_TRAVERSE_DEPTH = 2; 
     }
 
     // ----------------------
