@@ -220,11 +220,10 @@ export default class WorkspaceScene extends Phaser.Scene {
     createComponent(this, panelWidth / 2, componentStartY, 'baterija', 0xff6600, ui);
     createComponent(this, panelWidth / 2, componentStartY + componentGap, 'upor', 0xff6600, ui);
     createComponent(this, panelWidth / 2, componentStartY + componentGap * 2, 'svetilka', 0xff0000  , ui);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 3, 'stikalo-on', 0x666666, ui);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 4, 'stikalo-off', 0x666666,  ui);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 5, 'žica', 0x0066cc, ui);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 6, 'ampermeter', 0x00cc66, ui);
-    createComponent(this, panelWidth / 2, componentStartY + componentGap * 7, 'voltmeter', 0x00cc66, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 3, 'stikalo-off', 0x666666, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 4, 'žica', 0x0066cc, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 5, 'ampermeter', 0x00cc66, ui);
+    createComponent(this, panelWidth / 2, componentStartY + componentGap * 6, 'voltmeter', 0x00cc66, ui);
 
     // Toggle button for drag mode
     const toggleButtonY =  135* ui;

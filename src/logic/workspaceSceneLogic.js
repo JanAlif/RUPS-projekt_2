@@ -103,6 +103,35 @@ function getComponentDetails(type) {
   return details[type] || 'Komponenta';
 }
 
+const DOUBLE_CLICK_DELAY = 250;
+
+function isSwitchType(type) {
+  return type === 'stikalo-on' || type === 'stikalo-off';
+}
+
+function toggleSwitchState(scene, component) {
+  const currentType = component.getData('type');
+  if (!isSwitchType(currentType)) return;
+
+  const nextType = currentType === 'stikalo-on' ? 'stikalo-off' : 'stikalo-on';
+  const image = component.getData('componentImage');
+  if (image) {
+    image.setTexture(nextType);
+  }
+
+  const label = component.getData('label');
+  if (label) {
+    label.setText(nextType);
+  }
+
+  const logicComp = component.getData('logicComponent');
+  if (logicComp) {
+    logicComp.is_on = nextType === 'stikalo-on';
+  }
+
+  component.setData('type', nextType);
+}
+
 function snapToGrid(scene, x, y) {
   const gridSize = scene.gridSize;
   const startX = 200;
@@ -220,6 +249,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
     resolution: window.devicePixelRatio,
   }).setOrigin(0.5);
   newComponent.add(label);
+  newComponent.setData('label', label);
   
   newComponent.setSize(70, 70);
   newComponent.setInteractive({ draggable: true, useHandCursor: true });
@@ -231,6 +261,8 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   newComponent.setData('isDragging', false);
   newComponent.setData('wasDragged', false);
   newComponent.setData('componentImage', componentImage);
+  newComponent.setData('lastClickTime', 0);
+  newComponent.setData('singleClickTimer', null);
 
   
   if (comp) {
@@ -256,46 +288,51 @@ function placeComponentAtPosition(scene, x, y, type, color) {
     newComponent.setData('wasDragged', true);
   });
   
-  // Add rotation on left-click in drag mode
   newComponent.on('pointerup', (pointer) => {
-    if (newComponent.getData('wasDragged')) {
-      newComponent.setData('wasDragged', false);
-      return;
-    }
-    
-    // Don't rotate on right-click
-    if (pointer.button === 2) return;
-    // Don't rotate if context menu was just opened
-    if (scene.contextMenuJustOpened) return;
-    
-        
-    
-    // Only rotate in drag mode on left-click
-    if (scene.dragMode && pointer.button === 0) {
-      const currentRotation = newComponent.getData('rotation') || 0;
-      const logicalRotation = (currentRotation + 90) % 360;
-      newComponent.setData('rotation', logicalRotation);
-      updateLogicNodePositions(scene, newComponent);
-      
-      // Rotate the container if it exists (battery), otherwise rotate the image
-      const rotatableContainer = newComponent.getData('rotatableContainer');
-      const storedImage = newComponent.getData('componentImage');
-      console.log('Rotating - container:', rotatableContainer, 'image:', storedImage);
-      const targetToRotate = rotatableContainer ? rotatableContainer : storedImage;
-      
-      if (targetToRotate) {
-        const targetAngle = targetToRotate.angle + 90;
-        scene.tweens.add({
-          targets: targetToRotate,
-          angle: targetAngle,
-          duration: 150,
-          ease: 'Cubic.easeOut',
-        });
-      }
-    }
+    handleComponentClick(scene, newComponent, componentImage, pointer);
   });
   
   return newComponent;
+}
+
+function handleComponentClick(scene, component, componentImage, pointer) {
+  if (component.getData('isInPanel')) return;
+  if (component.getData('wasDragged')) {
+    component.setData('wasDragged', false);
+    return;
+  }
+  if (pointer.button === 2 || scene.contextMenuJustOpened) return;
+
+  const type = component.getData('type');
+  if (isSwitchType(type)) {
+    const now = scene.time.now;
+    const lastClick = component.getData('lastClickTime') || 0;
+    const pending = component.getData('singleClickTimer');
+
+    if (now - lastClick < DOUBLE_CLICK_DELAY) {
+      if (pending) {
+        pending.remove(false);
+        component.setData('singleClickTimer', null);
+      }
+      component.setData('lastClickTime', 0);
+      toggleSwitchState(scene, component);
+      return;
+    }
+
+    component.setData('lastClickTime', now);
+    if (scene.dragMode && pointer.button === 0) {
+      const timer = scene.time.delayedCall(DOUBLE_CLICK_DELAY, () => {
+        rotateComponent(scene, component, componentImage);
+        component.setData('singleClickTimer', null);
+      });
+      component.setData('singleClickTimer', timer);
+    }
+    return;
+  }
+
+  if (scene.dragMode && pointer.button === 0) {
+    rotateComponent(scene, component, componentImage);
+  }
 }
 function handleComponentMove(scene, newComponent) {
 
@@ -749,6 +786,7 @@ export function createComponent(scene, x, y, type, color, ui) {
     padding: { x: 4 * ui, y: 3 * ui },
 }).setOrigin(0.5);
   component.add(label);
+  component.setData('label', label);
 
   component.setSize(70, 70);
   component.setInteractive({ draggable: true, useHandCursor: true });
@@ -763,6 +801,8 @@ export function createComponent(scene, x, y, type, color, ui) {
   component.setData('isDragging', false);
   component.setData('wasDragged', false);
   component.setData('componentImage', componentImage);
+  component.setData('lastClickTime', 0);
+  component.setData('singleClickTimer', null);
 
   scene.input.setDraggable(component);
   
@@ -858,43 +898,7 @@ export function createComponent(scene, x, y, type, color, ui) {
 
   component.on('pointerup', (pointer) => {
     handleComponentMove(scene, component);
-    
-    if (component.getData('isInPanel')) return;
-    if (component.getData('wasDragged')) {
-      component.setData('wasDragged', false);
-      return;
-    }
-    // Don't rotate on right-click
-    if (pointer.button === 2) return;
-    // Don't rotate if context menu was just opened
-    if (scene.contextMenuJustOpened) return;
-    
-    // Only rotate in drag mode on left-click
-    if (scene.dragMode && pointer.button === 0) {
-      const currentRotation = component.getData('rotation') || 0;
-      const logicalRotation = (currentRotation + 90) % 360;
-      component.setData('rotation', logicalRotation);
-      component.setData('isRotated', !component.getData('isRotated'));
-      updateLogicNodePositions(scene, component);
-      
-      // Rotate the container if it exists (battery), otherwise rotate the image
-      const rotatableContainer = component.getData('rotatableContainer');
-      const storedImage = component.getData('componentImage');
-      const targetToRotate = rotatableContainer ? rotatableContainer : (storedImage || componentImage);
-      
-      if (targetToRotate) {
-        const targetAngle = targetToRotate.angle + 90;
-        scene.tweens.add({
-          targets: targetToRotate,
-          angle: targetAngle,
-          duration: 150,
-          ease: 'Cubic.easeOut',
-          onComplete: () => {
-            updateLogicNodePositions(scene, component);
-          }
-        });
-      }
-    }
+    handleComponentClick(scene, component, componentImage, pointer);
   });
 }
 
