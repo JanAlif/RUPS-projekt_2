@@ -49,9 +49,9 @@ export function initWorkspaceLogic(scene) {
     if (scene.contextMenu || scene.contextMenuJustOpened) return;
     // Don't place if we're dragging an existing component
     if (scene.isDraggingComponent) return;
-    if (!scene.dragMode && scene.activeComponentType && pointer.x > 200) {
-      const placementStartX = scene.gridStartX ?? scene.panelWidth ?? 200;
-    }  
+
+    // In click-to-place mode, place the selected component onto the grid
+    const placementStartX = scene.gridStartX ?? scene.panelWidth ?? 200;
     if (!scene.dragMode && scene.activeComponentType && pointer.x > placementStartX) {
       // Place component at clicked location
       const snapped = snapToGrid(scene, pointer.x, pointer.y);
@@ -108,7 +108,7 @@ function getComponentDetails(type) {
     upor: 'Uporabnost: omejuje tok\nMeri se v ohmih (Ω)',
     svetilka: 'Pretvarja električno energijo v svetlobo',
     'stikalo-on': 'Dovoljuje pretok toka',
-    'stikalo-off': 'Prepreči pretok toka',
+    'stikalo-off': 'Prepreči pretok toka \ndesni klik za vklop/izklop',
     žica: 'Povezuje komponente\nKlikni za obračanje',
     ampermeter: 'Meri električni tok\nEnota: amperi (A)',
     voltmeter: 'Meri električno napetost\nEnota: volti (V)',
@@ -392,8 +392,17 @@ function handleComponentMove(scene, newComponent) {
 function addContextMenu(scene, component, componentImage) {
   // Use rightclick event for better reliability
   component.on('pointerdown', (pointer) => {
-    
     if (pointer.rightButtonDown()) {
+      // Toggle switch state directly on right-click
+      if (isSwitchType(component.getData('type'))) {
+        // Close any open context menu to keep UI tidy
+        if (scene.contextMenu) {
+          scene.contextMenu.destroy();
+          scene.contextMenu = null;
+        }
+        toggleSwitchState(scene, component);
+        return;
+      }
       showContextMenu(scene, component, componentImage, pointer.x, pointer.y);
     }
   });
