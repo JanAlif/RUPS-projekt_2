@@ -33,12 +33,17 @@ export function initWorkspaceLogic(scene) {
   scene.sim = undefined;
   scene.sessionPoints = 0;
   
+  // Track if we're currently dragging a component
+  scene.isDraggingComponent = false;
+
   // Add click handler for workspace (for click-to-place mode)
   scene.input.on('pointerdown', (pointer) => {
     // Only place on left-click
     if (pointer.button !== 0) return;
     // Don't place if context menu is open or was just opened
     if (scene.contextMenu || scene.contextMenuJustOpened) return;
+    // Don't place if we're dragging an existing component
+    if (scene.isDraggingComponent) return;
     if (!scene.dragMode && scene.activeComponentType && pointer.x > 200) {
       // Place component at clicked location
       const snapped = snapToGrid(scene, pointer.x, pointer.y);
@@ -143,6 +148,10 @@ function snapToGrid(scene, x, y) {
 }
 
 function placeComponentAtPosition(scene, x, y, type, color) {
+  // Get UI scale from the scene
+  const ui = getUiScale(scene.scale);
+  const IMAGE_SIZE = 100 * ui;
+  
   // Create a new component at the specified position
   const newComponent = scene.add.container(x, y);
   
@@ -165,7 +174,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.localEnd = { x: 40, y: 0 };
       // Create a container for battery image and labels to rotate together
       const batteryContainer = scene.add.container(0, 0);
-      componentImage = scene.add.image(0, 0, 'baterija').setOrigin(0.5).setScale(0.5);
+      componentImage = scene.add.image(0, 0, 'baterija').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       const plusLabel = scene.add.text(-25, -15, '+', {
         fontSize: '24px', color: '#ff0000', fontStyle: 'bold', padding: { x: 4, y: 2 },
       }).setOrigin(0.5);
@@ -183,7 +192,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'resistor';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'upor').setOrigin(0.5).setScale(0.5);
+      componentImage = scene.add.image(0, 0, 'upor').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
       
@@ -193,7 +202,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'bulb';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'svetilka').setOrigin(0.5).setScale(0.5)
+      componentImage = scene.add.image(0, 0, 'svetilka').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
       
@@ -203,7 +212,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'switch';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'stikalo-on').setOrigin(0.5).setScale(0.5);
+      componentImage = scene.add.image(0, 0, 'stikalo-on').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
       
@@ -213,7 +222,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'switch';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'stikalo-off').setOrigin(0.5).setScale(0.5);
+      componentImage = scene.add.image(0, 0, 'stikalo-off').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
       
@@ -223,30 +232,30 @@ function placeComponentAtPosition(scene, x, y, type, color) {
       comp.type = 'wire';
       comp.localStart = { x: -40, y: 0 };
       comp.localEnd = { x: 40, y: 0 };
-      componentImage = scene.add.image(0, 0, 'žica').setOrigin(0.5).setScale(0.5)
+      componentImage = scene.add.image(0, 0, 'žica').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
       
     case 'ampermeter':
       id = 'ammeter_' + getRandomInt(1000, 9999);
-      componentImage = scene.add.image(0, 0, 'ampermeter').setOrigin(0.5).setScale(0.5)
+      componentImage = scene.add.image(0, 0, 'ampermeter').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
       
     case 'voltmeter':
       id = 'voltmeter_' + getRandomInt(1000, 9999);
-      componentImage = scene.add.image(0, 0, 'voltmeter').setOrigin(0.5).setScale(0.5)
+      componentImage = scene.add.image(0, 0, 'voltmeter').setOrigin(0.5).setDisplaySize(IMAGE_SIZE, IMAGE_SIZE);
       newComponent.add(componentImage);
       break;
   }
   
   // Add label text
-  const label = scene.add.text(0, 30, type, {
-    fontSize: `${Math.round(18 * ui)}px`,
-    color: '#fff',
-    backgroundColor: '#00000088',
-    padding: { x: 4, y: 2 },
+  const label = scene.add.text(0, 40 * ui, type, {
+    fontSize: `${Math.round(14 * ui)}px`,
+    color: '#000000ff',
+    fontStyle: 'bold',
     resolution: window.devicePixelRatio,
+    padding: { x: 4 * ui, y: 3 * ui },
   }).setOrigin(0.5);
   newComponent.add(label);
   newComponent.setData('label', label);
@@ -278,8 +287,12 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   addContextMenu(scene, newComponent, componentImage);
   
   // Add drag handlers
-  componentImage.setInteractive({ draggable: true, useHandCursor: true })
   scene.input.setDraggable(newComponent);
+
+  newComponent.on('dragstart', () => {
+    newComponent.setData('isDragging', true);
+    scene.isDraggingComponent = true;
+  });
 
   newComponent.on('drag', (pointer, dragX, dragY) => {
     console.log('Dragging component', newComponent.getData('type'));
@@ -287,53 +300,47 @@ function placeComponentAtPosition(scene, x, y, type, color) {
     newComponent.y = dragY;
     newComponent.setData('wasDragged', true);
   });
-  
-  newComponent.on('pointerup', (pointer) => {
-    handleComponentClick(scene, newComponent, componentImage, pointer);
+
+  newComponent.on('dragend', () => {
+    handleComponentMove(scene, newComponent);
+    newComponent.setData('isDragging', false);
+    scene.isDraggingComponent = false;
   });
   
-  return newComponent;
-}
-
-function handleComponentClick(scene, component, componentImage, pointer) {
-  if (component.getData('isInPanel')) return;
-  if (component.getData('wasDragged')) {
-    component.setData('wasDragged', false);
-    return;
-  }
-  if (pointer.button === 2 || scene.contextMenuJustOpened) return;
-
-  const type = component.getData('type');
-  if (isSwitchType(type)) {
-    const now = scene.time.now;
-    const lastClick = component.getData('lastClickTime') || 0;
-    const pending = component.getData('singleClickTimer');
-
-    if (now - lastClick < DOUBLE_CLICK_DELAY) {
-      if (pending) {
-        pending.remove(false);
-        component.setData('singleClickTimer', null);
-      }
-      component.setData('lastClickTime', 0);
-      toggleSwitchState(scene, component);
+  newComponent.on('pointerup', (pointer) => {
+    if (newComponent.getData('wasDragged')) {
+      newComponent.setData('wasDragged', false);
       return;
     }
-
-    component.setData('lastClickTime', now);
-    if (scene.dragMode && pointer.button === 0) {
-      const timer = scene.time.delayedCall(DOUBLE_CLICK_DELAY, () => {
-        rotateComponent(scene, component, componentImage);
-        component.setData('singleClickTimer', null);
-      });
-      component.setData('singleClickTimer', timer);
+    
+    // Don't rotate on right-click
+    if (pointer.button === 2) return;
+    // Don't rotate if context menu was just opened
+    if (scene.contextMenuJustOpened) return;
+    // Only handle left-click
+    if (pointer.button !== 0) return;
+    
+    const now = Date.now();
+    const lastClickTime = newComponent.getData('lastClickTime') || 0;
+    const componentImage = newComponent.getData('componentImage');
+    
+    // Check if this is a double-click
+    if (now - lastClickTime < DOUBLE_CLICK_DELAY) {
+      // Double-click detected - rotate immediately
+      const timer = newComponent.getData('singleClickTimer');
+      if (timer) {
+        timer.remove();
+        newComponent.setData('singleClickTimer', null);
+      }
+      rotateComponent(scene, newComponent, componentImage);
+      newComponent.setData('lastClickTime', 0);
+    } else {
+      // First click - update last click time
+      newComponent.setData('lastClickTime', now);
     }
-    return;
-  }
-
-  if (scene.dragMode && pointer.button === 0) {
-    rotateComponent(scene, component, componentImage);
-  }
+  });
 }
+
 function handleComponentMove(scene, newComponent) {
 
     console.log('handling the component connections');
@@ -897,8 +904,36 @@ export function createComponent(scene, x, y, type, color, ui) {
 
 
   component.on('pointerup', (pointer) => {
-    handleComponentMove(scene, component);
-    handleComponentClick(scene, component, componentImage, pointer);
+    if (component.getData('wasDragged')) {
+      component.setData('wasDragged', false);
+      return;
+    }
+    
+    // Don't rotate on right-click
+    if (pointer.button === 2) return;
+    // Don't rotate if context menu was just opened
+    if (scene.contextMenuJustOpened) return;
+    // Only handle left-click for placed components
+    if (pointer.button !== 0) return;
+    if (component.getData('isInPanel')) return;
+    
+    const now = Date.now();
+    const lastClickTime = component.getData('lastClickTime') || 0;
+    
+    // Check if this is a double-click
+    if (now - lastClickTime < DOUBLE_CLICK_DELAY) {
+      // Double-click detected - rotate immediately
+      const timer = component.getData('singleClickTimer');
+      if (timer) {
+        timer.remove();
+        component.setData('singleClickTimer', null);
+      }
+      rotateComponent(scene, component, componentImage);
+      component.setData('lastClickTime', 0);
+    } else {
+      // First click - update last click time
+      component.setData('lastClickTime', now);
+    }
   });
 }
 
