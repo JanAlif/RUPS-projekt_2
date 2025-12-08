@@ -82,6 +82,13 @@ export default class WorkspaceScene extends Phaser.Scene {
     const gridEndX = width - 30;
     const gridEndY = height - 40;
 
+    // share grid metrics with logic for snapping
+    this.gridSize = gridSize;
+    this.gridStartX = gridStartX;
+    this.gridStartY = gridStartY;
+    this.gridEndX = gridEndX;
+    this.gridEndY = gridEndY;
+
     for (let x = gridStartX; x < gridEndX; x += gridSize) {
       gridGraphics.beginPath();
       gridGraphics.moveTo(x, 0);
@@ -199,6 +206,7 @@ export default class WorkspaceScene extends Phaser.Scene {
 
     // stranska vrstica
     const panelWidth = Math.max(160 * ui, width * 0.12);
+    this.panelWidth = panelWidth;
     const sidePanel = this.add.graphics();
     sidePanel.fillStyle(0xc0c0c0, 0.96);
     sidePanel.fillRoundedRect(0, 0, panelWidth, height, 0);
@@ -304,7 +312,6 @@ export default class WorkspaceScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    console.log(JSON.parse(localStorage.getItem('users')));
 
     // naloži izzive iz backenda
     loadChallengesFromApi(this);

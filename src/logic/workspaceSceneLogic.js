@@ -28,7 +28,12 @@ export function resetWorkspaceProgress() {
 export function initWorkspaceLogic(scene) {
   scene.graph = new CircuitGraph();
   scene.placedComponents = [];
-  scene.gridSize = 48;
+  scene.gridSize = scene.gridSize || 40;
+  scene.gridStartX = scene.gridStartX || 200;
+  scene.gridStartY = scene.gridStartY || 0;
+  scene.gridEndX = scene.gridEndX || (scene.scale?.width || scene.sys.game.config.width);
+  scene.gridEndY = scene.gridEndY || (scene.scale?.height || scene.sys.game.config.height);
+  scene.panelWidth = scene.panelWidth || 200;
   scene.challenges = [];
   scene.sim = undefined;
   scene.sessionPoints = 0;
@@ -45,6 +50,9 @@ export function initWorkspaceLogic(scene) {
     // Don't place if we're dragging an existing component
     if (scene.isDraggingComponent) return;
     if (!scene.dragMode && scene.activeComponentType && pointer.x > 200) {
+      const placementStartX = scene.gridStartX ?? scene.panelWidth ?? 200;
+    }  
+    if (!scene.dragMode && scene.activeComponentType && pointer.x > placementStartX) {
       // Place component at clicked location
       const snapped = snapToGrid(scene, pointer.x, pointer.y);
       placeComponentAtPosition(scene, snapped.x, snapped.y, scene.activeComponentType.type, scene.activeComponentType.color);
@@ -138,13 +146,19 @@ function toggleSwitchState(scene, component) {
 }
 
 function snapToGrid(scene, x, y) {
-  const gridSize = scene.gridSize;
-  const startX = 200;
+  const gridSize = scene.gridSize || 40;
+  const startX = scene.gridStartX ?? scene.panelWidth ?? 200;
+  const startY = scene.gridStartY ?? 0;
+  const endX = scene.gridEndX ?? startX;
+  const endY = scene.gridEndY ?? startY;
 
   const snappedX = Math.round((x - startX) / gridSize) * gridSize + startX;
-  const snappedY = Math.round(y / gridSize) * gridSize;
+  const snappedY = Math.round((y - startY) / gridSize) * gridSize + startY;
 
-  return { x: snappedX, y: snappedY };
+  const clampedX = Math.min(Math.max(snappedX, startX), endX);
+  const clampedY = Math.min(Math.max(snappedY, startY), endY);
+
+  return { x: clampedX, y: clampedY };
 }
 
 function placeComponentAtPosition(scene, x, y, type, color) {
@@ -295,7 +309,6 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   });
 
   newComponent.on('drag', (pointer, dragX, dragY) => {
-    console.log('Dragging component', newComponent.getData('type'));
     newComponent.x = dragX;
     newComponent.y = dragY;
     newComponent.setData('wasDragged', true);
@@ -343,7 +356,6 @@ function placeComponentAtPosition(scene, x, y, type, color) {
 
 function handleComponentMove(scene, newComponent) {
 
-    console.log('handling the component connections');
 
     const compLogic = newComponent.getData('logicComponent');
     if (!compLogic) return;
@@ -374,7 +386,6 @@ function handleComponentMove(scene, newComponent) {
     }
 
     // 5) NOW re-add component (LAST)
-    console.log('Re-adding component to graph:', compLogic.id);
     scene.graph.addComponent(compLogic);
 }
 
@@ -847,7 +858,8 @@ export function createComponent(scene, x, y, type, color, ui) {
   });
 
   component.on('dragend', () => {
-    const isInPanel = component.x < 200;
+    const panelBoundary = scene.panelWidth ?? 200;
+    const isInPanel = component.x < panelBoundary;
 
     if (isInPanel && !component.getData('isInPanel')) {
       component.destroy();
@@ -998,6 +1010,7 @@ function showBatteryTutorial(scene) {
  * Simulira krog in nastavi scene.sim + checkText.
  */
 export function simulateCircuit(scene) {
+  console.log(scene.graph);
   scene.connected = scene.graph.simulate();
   if (scene.connected === 1) {
     scene.checkText.setStyle({ color: '#00aa00' });
@@ -1030,7 +1043,6 @@ export function checkCircuit(scene) {
     const placedTypes = scene.placedComponents.map((comp) =>
       comp.getData('type')
     );
-    console.log('components', placedTypes);
   
     scene.checkText.setStyle({ color: '#cc0000' });
   
@@ -1065,7 +1077,6 @@ export function checkCircuit(scene) {
   
     // 👉 TE točke gredo v trenutni session, ne direkt v bazo
     scene.sessionPoints = (scene.sessionPoints || 0) + totalPoints;
-    console.log('Session points (trenutni):', scene.sessionPoints);
   
     if (currentChallenge.theory && currentChallenge.theory.length > 0) {
       showTheory(scene, currentChallenge.theory);

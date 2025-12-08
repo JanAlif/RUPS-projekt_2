@@ -4,7 +4,8 @@ class CircuitGraph {
         this.components = [];       // list of components
         this.MERGE_RADIUS = 85;     // global radius used for merging/pruning/traversal
         this.TRAVERSE_RADIUS = this.MERGE_RADIUS;
-        this.MIN_TRAVERSE_DEPTH = 2; 
+        // A closed loop should be detected even if only a single component bridges the battery terminals
+        this.MIN_TRAVERSE_DEPTH = 1;
     }
 
     // ----------------------
@@ -13,8 +14,6 @@ class CircuitGraph {
     addNode(node) {
         if (!node) return null;
         if (!node.connected) node.connected = new Set();
-
-        console.log(`addNode(): ${node.id} @ (${node.x},${node.y})`);
 
         for (const existingNode of this.nodes.values()) {
             // avoid merging nodes that belong to same physical component endpoints of the same ID prefix
@@ -25,13 +24,13 @@ class CircuitGraph {
             const distance = Math.hypot(dx, dy);
 
             if (distance <= this.MERGE_RADIUS) {
-                console.log(` MERGE: ${node.id} -> ${existingNode.id} (dist=${distance.toFixed(1)})`);
+                //console.log(` MERGE: ${node.id} -> ${existingNode.id} (dist=${distance.toFixed(1)})`);
 
                 // merge adjacency sets
                 if (node.connected) {
                     for (const n of node.connected) {
                         existingNode.connected.add(n);
-                        console.log(`   merged adjacency: ${existingNode.id} ↔ ${n.id}`);
+                        //console.log(`   merged adjacency: ${existingNode.id} ↔ ${n.id}`);
                     }
                 }
 
@@ -49,7 +48,7 @@ class CircuitGraph {
             }
         }
 
-        console.log(` store new node: ${node.id}`);
+        //console.log(` store new node: ${node.id}`);
         this.nodes.set(node.id, node);
         return node;
     }
@@ -68,7 +67,7 @@ class CircuitGraph {
             return;
         }
 
-        console.log(`addComponent(): ${component.id} (${component.type})`);
+        //console.log(`addComponent(): ${component.id} (${component.type})`);
 
         // ensure nodes are canonical / merged
         component.start = this.addNode(component.start);
@@ -79,7 +78,7 @@ class CircuitGraph {
         component.end.connected.add(component.start);
 
         this.components.push(component);
-        console.log(` component stored: ${component.id} start=${component.start.id} end=${component.end.id}`);
+        //console.log(` component stored: ${component.id} start=${component.start.id} end=${component.end.id}`);
     }
 
     // ----------------------
@@ -107,7 +106,7 @@ class CircuitGraph {
             if (this.sameNode(comp.start, node)) out.push({ component: comp, otherNode: comp.end });
             else if (this.sameNode(comp.end, node)) out.push({ component: comp, otherNode: comp.start });
         }
-        console.log(`getConnections(${node.id}) => [${out.map(o => o.component.id).join(", ")}]`);
+        //console.log(`getConnections(${node.id}) => [${out.map(o => o.component.id).join(", ")}]`);
         return out;
     }
 
@@ -129,7 +128,7 @@ class CircuitGraph {
                 results.push({ component: comp, otherNode: comp.start, matchedEndpoint: 'end' });
             }
         }
-        console.log(`getSpatialConnections(${node.id}) -> ${results.length}`);
+        //console.log(`getSpatialConnections(${node.id}) -> ${results.length}`);
         return results;
     }
 
@@ -148,7 +147,7 @@ class CircuitGraph {
 
         // If we've actually arrived at target AFTER traversing enough components, success
         if (this.sameNode(current, target) && depth >= this.MIN_TRAVERSE_DEPTH) {
-            console.log(`✔ path success: reached battery end at depth=${depth}`);
+            //console.log(`✔ path success: reached battery end at depth=${depth}`);
             return true;
         }
 
@@ -189,12 +188,12 @@ class CircuitGraph {
             const endpoint = (matchedEndpoint === 'start') ? comp.start : comp.end;
             if (!this.isClose(current, endpoint)) {
                 // if not actually close enough skip this traversal
-                console.log(` skipping comp ${comp.id} because matched endpoint isn't close (sanity)`);
+                //console.log(` skipping comp ${comp.id} because matched endpoint isn't close (sanity)`);
                 visitedComponents.delete(comp);
                 continue;
             }
 
-            console.log(`→ traverse comp=${comp.id} (${comp.type}) current=${current.id} → next=${nextNode.id} depth=${depth+1}`);
+            //console.log(`→ traverse comp=${comp.id} (${comp.type}) current=${current.id} → next=${nextNode.id} depth=${depth+1}`);
 
             if (this.findPathToBatteryEnd(nextNode, target, visitedComponents, visitedNodes, depth + 1)) {
                 return true;
@@ -211,7 +210,7 @@ class CircuitGraph {
     // ----------------------
     removeAllConnectionsFromComponent(compLogic) {
         if (!compLogic) return;
-        console.log(`removeAllConnectionsFromComponent(${compLogic.id})`);
+        //console.log(`removeAllConnectionsFromComponent(${compLogic.id})`);
 
         const radius = this.MERGE_RADIUS;
 
@@ -219,7 +218,7 @@ class CircuitGraph {
         const idx = this.components.indexOf(compLogic);
         if (idx !== -1) {
             this.components.splice(idx, 1);
-            console.log(` removed component ${compLogic.id} from graph.components`);
+            //console.log(` removed component ${compLogic.id} from graph.components`);
         }
 
         // nodes that belonged to moved component
@@ -232,7 +231,7 @@ class CircuitGraph {
             // ensure set present
             if (!movedNode.connected) movedNode.connected = new Set();
 
-            console.log(` checking movedNode ${movedNode.id}`);
+            //console.log(` checking movedNode ${movedNode.id}`);
 
             // snapshot neighbors because we'll modify during iteration
             const neighbors = [...movedNode.connected];
@@ -257,7 +256,7 @@ class CircuitGraph {
                 if (distance > radius) {
                     movedNode.connected.delete(other);
                     other.connected?.delete(movedNode);
-                    console.log(` pruned ${movedNode.id} ↔ ${other.id} (dist=${distance.toFixed(1)} > ${radius})`);
+                    //console.log(` pruned ${movedNode.id} ↔ ${other.id} (dist=${distance.toFixed(1)} > ${radius})`);
                 }
             }
 
@@ -270,7 +269,7 @@ class CircuitGraph {
                     if (Math.hypot(dx, dy) > radius) {
                         node.connected.delete(movedNode);
                         movedNode.connected.delete(node);
-                        console.log(` removed stale ref ${node.id} -> ${movedNode.id}`);
+                        //console.log(` removed stale ref ${node.id} -> ${movedNode.id}`);
                     }
                 }
             }
@@ -281,7 +280,7 @@ class CircuitGraph {
             if (!referenced && !hasConnections) {
                 if (this.nodes.has(movedNode.id)) {
                     this.nodes.delete(movedNode.id);
-                    console.log(` deleted orphan node ${movedNode.id}`);
+                    //console.log(` deleted orphan node ${movedNode.id}`);
                 }
             }
         }
@@ -297,7 +296,7 @@ class CircuitGraph {
                         const dx = comp.end.x - comp.start.x;
                         const dy = comp.end.y - comp.start.y;
                         if (Math.hypot(dx, dy) > radius) {
-                            console.log(` nulling comp ${comp.id}.start because it's too far from end`);
+                            //console.log(` nulling comp ${comp.id}.start because it's too far from end`);
                             comp.start = null;
                         }
                     }
@@ -311,7 +310,7 @@ class CircuitGraph {
                         const dx = comp.start.x - comp.end.x;
                         const dy = comp.start.y - comp.end.y;
                         if (Math.hypot(dx, dy) > radius) {
-                            console.log(` nulling comp ${comp.id}.end because it's too far from start`);
+                            //console.log(` nulling comp ${comp.id}.end because it's too far from start`);
                             comp.end = null;
                         }
                     }
@@ -324,14 +323,12 @@ class CircuitGraph {
     // simulate: logging + call findPathToBatteryEnd
     // ----------------------
     simulate() {
-        console.log("\nSIMULATE()");
-        console.log("Nodes:");
+        //console.log("\nSIMULATE()");
+        //console.log("Nodes:");
         for (const n of this.nodes.values()) {
-            console.log(`  ${n.id} -> [${[...n.connected].map(x => x.id).join(", ")}]`);
         }
-        console.log("Components:");
+        //console.log("Components:");
         for (const c of this.components) {
-            console.log(`  ${c.id} (${c.type}) = ${c.start?.id} ↔ ${c.end?.id}`);
         }
 
         const battery = this.components.find(c => c.type === 'battery');
@@ -343,17 +340,14 @@ class CircuitGraph {
         const start = battery.start;
         const end = battery.end;
 
-        console.log(` battery start=${start?.id}, end=${end?.id}`);
 
         // run full traversal
         const closed = this.findPathToBatteryEnd(start, end);
 
         if (closed) {
-            console.log("CIRCUIT CLOSED");
             this.components.filter(c => c.type === 'bulb').forEach(b => b.turnOn?.());
             return 1;
         } else {
-            console.log("CIRCUIT OPEN");
             this.components.filter(c => c.type === 'bulb').forEach(b => b.turnOff?.());
             return 0;
         }
