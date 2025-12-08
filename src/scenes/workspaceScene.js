@@ -227,7 +227,7 @@ export default class WorkspaceScene extends Phaser.Scene {
     createComponent(this, panelWidth / 2, componentStartY + componentGap * 7, 'voltmeter', 0x00cc66, ui);
 
     // Toggle button for drag mode
-    const toggleButtonY = height - 100;
+    const toggleButtonY =  135* ui;
     const toggleButton = this.add
       .text(panelWidth / 2, toggleButtonY, '🖱️ Drag Mode', {
         fontSize: `${Math.round(16 * ui)}px`,

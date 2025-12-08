@@ -28,7 +28,7 @@ export function resetWorkspaceProgress() {
 export function initWorkspaceLogic(scene) {
   scene.graph = new CircuitGraph();
   scene.placedComponents = [];
-  scene.gridSize = 40;
+  scene.gridSize = 48;
   scene.challenges = [];
   scene.sim = undefined;
   scene.sessionPoints = 0;
@@ -249,7 +249,7 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   componentImage.setInteractive({ draggable: true, useHandCursor: true })
   scene.input.setDraggable(newComponent);
 
-   newComponent.on('drag', (pointer, dragX, dragY) => {
+  newComponent.on('drag', (pointer, dragX, dragY) => {
     console.log('Dragging component', newComponent.getData('type'));
     newComponent.x = dragX;
     newComponent.y = dragY;
