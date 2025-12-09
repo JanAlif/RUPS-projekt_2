@@ -188,7 +188,13 @@ export default class WorkspaceScene extends Phaser.Scene {
             cornerRadius
           );
         })
-        .on('pointerdown', onClick);
+        .on('pointerdown', (pointer) => {
+          // Stop propagation to prevent workspace click handler
+          if (pointer.event) {
+            pointer.event.stopPropagation();
+          }
+          onClick();
+        });
 
       return { bg, text };
     };
@@ -245,7 +251,11 @@ export default class WorkspaceScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true })
-      .on('pointerdown', () => {
+      .on('pointerdown', (pointer) => {
+        // Stop propagation to prevent workspace click handler
+        if (pointer.event) {
+          pointer.event.stopPropagation();
+        }
         this.dragMode = !this.dragMode;
         if (this.dragMode) {
           toggleButton.setText('🖱️ Drag Mode');
@@ -279,7 +289,11 @@ export default class WorkspaceScene extends Phaser.Scene {
       .on('pointerout', () =>
         backButton.setStyle({ color: '#8ab4ff' })
       )
-      .on('pointerdown', async () => {
+      .on('pointerdown', async (pointer) => {
+        // Stop propagation to prevent workspace click handler
+        if (pointer.event) {
+          pointer.event.stopPropagation();
+        }
         await finalizeSession(this);
         resetWorkspaceProgress();
         localStorage.setItem('lastScene', 'LabScene');

@@ -49,6 +49,11 @@ export function initWorkspaceLogic(scene) {
     if (scene.contextMenu || scene.contextMenuJustOpened) return;
     // Don't place if we're dragging an existing component
     if (scene.isDraggingComponent) return;
+    // Don't place if we clicked on a button/component in the left panel
+    if (pointer.x < (scene.panelWidth ?? 200)) return;
+    // Don't place if we clicked on the right side buttons area (top 250px, right 250px)
+    const width = scene.scale?.width || scene.sys.game.config.width;
+    if (pointer.x > width - 250 && pointer.y < 250) return;
 
     // In click-to-place mode, place the selected component onto the grid
     const placementStartX = scene.gridStartX ?? scene.panelWidth ?? 200;
@@ -837,6 +842,11 @@ export function createComponent(scene, x, y, type, color, ui) {
   component.on('pointerdown', (pointer) => {
     if (pointer.rightButtonDown()) return; // ignore right clicks
     if (component.getData('isInPanel') && !scene.dragMode) {
+      // Stop propagation to prevent workspace click handler from placing component
+      if (pointer.event) {
+        pointer.event.stopPropagation();
+      }
+      
       // Clear previous selection indicator
       if (scene.selectedComponentIndicator) {
         scene.selectedComponentIndicator.destroy();
