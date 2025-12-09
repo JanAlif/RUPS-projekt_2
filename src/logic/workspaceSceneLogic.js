@@ -148,6 +148,9 @@ function toggleSwitchState(scene, component) {
   }
 
   component.setData('type', nextType);
+  
+  // Save workspace state
+  saveWorkspaceState(scene);
 }
 
 function snapToGrid(scene, x, y) {
@@ -302,6 +305,9 @@ function placeComponentAtPosition(scene, x, y, type, color) {
   updateLogicNodePositions(scene, newComponent);
   scene.placedComponents.push(newComponent);
   
+  // Save workspace state
+  saveWorkspaceState(scene);
+  
   // Add context menu on right-click
   addContextMenu(scene, newComponent, componentImage);
   
@@ -392,6 +398,9 @@ function handleComponentMove(scene, newComponent) {
 
     // 5) NOW re-add component (LAST)
     scene.graph.addComponent(compLogic);
+    
+    // Save workspace state
+    saveWorkspaceState(scene);
 }
 
 function addContextMenu(scene, component, componentImage) {
@@ -516,6 +525,9 @@ function rotateComponent(scene, component, componentImage) {
       ease: 'Cubic.easeOut',
     });
   }
+  
+  // Save workspace state
+  saveWorkspaceState(scene);
 }
 
 function deleteComponent(scene, component) {
@@ -541,6 +553,9 @@ function deleteComponent(scene, component) {
   }
   
   component.destroy();
+  
+  // Save workspace state
+  saveWorkspaceState(scene);
 }
 
 function duplicateComponent(scene, component) {
@@ -550,6 +565,7 @@ function duplicateComponent(scene, component) {
   const offsetY = 80;
   
   placeComponentAtPosition(scene, component.x + offsetX, component.y + offsetY, type, color);
+  // placeComponentAtPosition already calls saveWorkspaceState
 }
 
 function getRandomInt(min, max) {
@@ -919,6 +935,9 @@ export function createComponent(scene, x, y, type, color, ui) {
       
       // Add context menu to placed component
       addContextMenu(scene, component, componentImage);
+      
+      // Save workspace state
+      saveWorkspaceState(scene);
     } else if (!component.getData('isInPanel')) {
       const snapped = snapToGrid(scene, component.x, component.y);
       component.x = snapped.x;
@@ -1240,3 +1259,88 @@ export async function finalizeSession(scene) {
     // lokalni reset sessiona (baza hrani lastSession / total / highScore)
     scene.sessionPoints = 0;
   }
+
+/**
+ * Save the current workspace state to localStorage
+ */
+export function saveWorkspaceState(scene) {
+  const componentsData = scene.placedComponents.map(comp => {
+    const logicComp = comp.getData('logicComponent');
+    return {
+      x: comp.x,
+      y: comp.y,
+      type: comp.getData('type'),
+      color: comp.getData('color'),
+      rotation: comp.getData('rotation') || 0,
+      // For switches, save their state
+      isOn: logicComp && logicComp.is_on !== undefined ? logicComp.is_on : null
+    };
+  });
+  
+  localStorage.setItem('workspaceComponents', JSON.stringify(componentsData));
+}
+
+/**
+ * Load the workspace state from localStorage
+ */
+export function loadWorkspaceState(scene) {
+  const savedData = localStorage.getItem('workspaceComponents');
+  if (!savedData) return;
+  
+  try {
+    const componentsData = JSON.parse(savedData);
+    const ui = getUiScale(scene.scale);
+    
+    componentsData.forEach(data => {
+      // Place component at saved position
+      placeComponentAtPosition(scene, data.x, data.y, data.type, data.color);
+      
+      // Get the just-placed component
+      const placedComp = scene.placedComponents[scene.placedComponents.length - 1];
+      
+      // Restore rotation
+      if (data.rotation && data.rotation !== 0) {
+        const componentImage = placedComp.getData('componentImage');
+        // Apply rotation the correct number of times
+        const rotations = data.rotation / 90;
+        for (let i = 0; i < rotations; i++) {
+          rotateComponent(scene, placedComp, componentImage);
+        }
+      }
+      
+      // Restore switch state if needed
+      if (data.isOn !== null && isSwitchType(data.type)) {
+        const currentType = placedComp.getData('type');
+        const shouldBeOn = data.isOn;
+        const isOn = currentType === 'stikalo-on';
+        
+        // Toggle if states don't match
+        if (shouldBeOn !== isOn) {
+          toggleSwitchState(scene, placedComp);
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error loading workspace state:', error);
+  }
+}
+
+/**
+ * Clear all components from the workspace
+ */
+export function clearWorkspace(scene) {
+  // Destroy all placed components
+  scene.placedComponents.forEach(comp => comp.destroy());
+  scene.placedComponents = [];
+  
+  // Clear the graph
+  scene.graph = new CircuitGraph();
+  
+  // Clear saved state
+  localStorage.removeItem('workspaceComponents');
+  
+  // Clear any feedback text
+  if (scene.checkText) {
+    scene.checkText.setText('');
+  }
+}

@@ -12,6 +12,8 @@ import {
   simulateCircuit,
   resetWorkspaceProgress,
   finalizeSession,
+  loadWorkspaceState,
+  clearWorkspace,
 } from '../logic/workspaceSceneLogic';
 
 export default class WorkspaceScene extends Phaser.Scene {
@@ -209,6 +211,7 @@ export default class WorkspaceScene extends Phaser.Scene {
     makeButton(width - 140, 180 + 15 * ui, 'Simulacija', () =>
       simulateCircuit(this)
     );
+    makeButton(width - 140, 240 + 15 * ui, 'Počisti mizo', () => clearWorkspace(this));
 
     // stranska vrstica
     const panelWidth = Math.max(160 * ui, width * 0.12);
@@ -329,6 +332,9 @@ export default class WorkspaceScene extends Phaser.Scene {
 
     // naloži izzive iz backenda
     loadChallengesFromApi(this);
+
+    // Load saved workspace state
+    loadWorkspaceState(this);
 
     attachResize(this, () => this.scene.restart());
   }
